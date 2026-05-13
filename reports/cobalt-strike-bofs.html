@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Custom Cobalt Strike Beacon Object Files for Active Directory enumeration, lateral movement, and OPSEC-aware tradecraft.">
+    <title>Cobalt Strike BOFs // @redroot97</title>
+    <link rel="stylesheet" href="../css/style.css?v=20260514">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='75' font-family='monospace' font-size='80' font-weight='800' fill='%23ff3344'>@</text></svg>">
+</head>
+<body>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="../index.html" class="nav-logo">
+            <span class="prompt">~/</span>redroot97<span class="cursor"></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="../index.html" class="active">research</a></li>
+            <li><a href="../cves.html">cve</a></li>
+            <li><a href="../whoami.html">whoami</a></li>
+            <li><a href="../whoami.html#contact">contact</a></li>
+        </ul>
+        <a href="https://github.com/redroot97" target="_blank" rel="noopener" class="nav-github">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+            <span>github</span>
+        </a>
+    </div>
+</nav>
+
+<div class="page-header">
+    <div class="page-header-grid-bg"></div>
+    <div class="page-header-inner">
+        <div class="page-breadcrumb">
+            <a href="../index.html">~/</a><span class="sep">/</span><a href="../index.html">research</a><span class="sep">/</span><span>cobalt-strike-bofs</span>
+        </div>
+        <h1 class="page-title">cobalt strike <span class="glitch accent" data-text="BOFs">BOFs</span></h1>
+        <p class="page-subtitle">Custom Beacon Object Files for in-process execution during Active Directory engagements.</p>
+    </div>
+</div>
+
+<div class="writeup-body">
+
+    <div class="writeup-meta">
+        <span class="meta-tag">cobalt strike</span>
+        <span class="meta-tag">active directory</span>
+        <span class="meta-tag">bof</span>
+        <span class="meta-sep"></span>
+        <span>2026.03</span>
+    </div>
+
+    <h2>// what are BOFs</h2>
+
+    <p>
+        Beacon Object Files (BOFs) are small compiled C programs that execute <strong>inside the Beacon process</strong> rather than spawning a new process. This is the critical difference between a BOF and a traditional Cobalt Strike post-exploitation module.
+    </p>
+
+    <p>
+        In a default Cobalt Strike configuration, running <code>shell whoami</code> creates a new <code>cmd.exe</code> process, which spawns a child process, which executes the command. That's three process creation events that EDR tools love to flag. A BOF that does the same thing runs entirely within the existing Beacon process - no new process, no fork-and-run, no suspicious parent-child relationships.
+    </p>
+
+    <div class="callout">
+        <strong>Why this matters:</strong> modern EDR solutions trigger on process creation telemetry. Cobalt Strike's default fork-and-run model for post-exploitation commands (like <code>execute-assembly</code>) is one of the most reliably detected patterns in enterprise environments. BOFs eliminate that entire detection surface.
+    </div>
+
+    <h2>// how BOFs work</h2>
+
+    <p>
+        A BOF is a compiled COFF (Common Object File Format) object file - the intermediate output of a C compiler before linking. Cobalt Strike's Beacon loads this object file into its own memory, resolves function imports dynamically, and calls the entry point. When the BOF finishes, Beacon frees the memory.
+    </p>
+
+    <div class="diagram"><span class="hl">[Operator Console]</span>
+      |
+      | "inline-execute myBof.o arg1 arg2"
+      v
+<span class="hl">[Beacon Process]</span>  (already running, already trusted by EDR)
+      |
+      | loads myBof.o into own memory
+      | resolves imports via Beacon's Dynamic Function Resolution
+      | calls go() entry point
+      |
+      | BOF runs IN-PROCESS
+      |   - calls Windows APIs directly
+      |   - output sent back via BeaconPrintf
+      |   - no child process spawned
+      |
+      | BOF returns, memory freed
+      v
+<span class="hl">[Operator Console]</span>  <-- receives output</div>
+
+    <h3>the BOF API</h3>
+
+    <p>
+        BOFs use Cobalt Strike's <strong>Dynamic Function Resolution (DFR)</strong> to call Windows APIs. Instead of linking against DLLs at compile time, the BOF declares the functions it needs, and Beacon resolves them at runtime. This means the BOF's import table is empty - another feature that makes static analysis harder.
+    </p>
+
+    <pre><code>// declare the Windows API function
+DECLSPEC_IMPORT BOOL WINAPI ADVAPI32$LookupAccountSidW(
+    LPCWSTR, PSID, LPWSTR, LPDWORD, LPWSTR, LPDWORD, PSID_NAME_USE
+);
+
+// call it like a normal function in go()
+void go(char *args, int len) {
+    ADVAPI32$LookupAccountSidW(NULL, pSid, name, &nameLen, domain, &domainLen, &use);
+    BeaconPrintf(CALLBACK_OUTPUT, "Account: %S\\%S", domain, name);
+}</code></pre>
+
+    <h2>// what's in the repo</h2>
+
+    <p>
+        This collection contains BOFs built for real Active Directory engagements. Each one targets a specific phase of the kill chain and is designed to minimize detection surface while maximizing operator efficiency.
+    </p>
+
+    <h3>AD enumeration</h3>
+
+    <p>
+        BOFs that query Active Directory without touching <code>net.exe</code> or <code>dsquery.exe</code>. Direct LDAP queries from within the Beacon process, formatted for operator readability. Covers user enumeration, group membership, GPO listing, trust relationships, and SPN discovery for Kerberoasting targets.
+    </p>
+
+    <h3>lateral movement</h3>
+
+    <p>
+        Alternatives to Cobalt Strike's built-in lateral movement commands (<code>psexec</code>, <code>wmi</code>, <code>winrm</code>) that avoid the default fork-and-run pattern. These BOFs perform the same operations - service creation, WMI method invocation, remote process execution - but in-process, with configurable parameters for evasion.
+    </p>
+
+    <h3>OPSEC tradecraft</h3>
+
+    <p>
+        Situational awareness BOFs for checking common detection tripwires before acting. Includes: listing AV/EDR products via WMI, checking PowerShell logging configuration, enumerating Sysmon rules, identifying honeypot accounts, and verifying whether specific API hooks are in place.
+    </p>
+
+    <h2>// why custom BOFs</h2>
+
+    <p>
+        Public BOF collections are widely available and <strong>widely signatured</strong>. Every popular open-source BOF repo has been analyzed by security vendors and has detections written for it. The value of custom BOFs is that they are unknown to detection engineering teams and AV signature databases.
+    </p>
+
+    <ul>
+        <li><strong>Unique code patterns</strong> - public BOFs share common coding styles and API call sequences that get signatured. Custom BOFs use different approaches to the same operations.</li>
+        <li><strong>Engagement-specific tuning</strong> - each BOF is written for a specific engagement context. No unnecessary functionality that broadens the detection surface.</li>
+        <li><strong>Tested against target EDR</strong> - before deployment, each BOF is validated against the EDR stack present in the target environment.</li>
+    </ul>
+
+    <h2>// building</h2>
+
+    <p>
+        BOFs compile with <code>x86_64-w64-mingw32-gcc</code> (MinGW cross-compiler). Each BOF is a single C file with the Beacon API header:
+    </p>
+
+    <pre><code># compile a BOF
+x86_64-w64-mingw32-gcc -c bof_source.c -o bof_source.o
+
+# in Cobalt Strike console:
+inline-execute /path/to/bof_source.o [arguments]</code></pre>
+
+    <p>
+        The repo includes a Makefile that builds all BOFs in one pass. Each BOF has a corresponding aggressor script (<code>.cna</code>) that registers it as a Beacon command with argument parsing and help text.
+    </p>
+
+    <h2>// detection perspective</h2>
+
+    <p>
+        BOFs are harder to detect than fork-and-run, but they're not invisible:
+    </p>
+
+    <ul>
+        <li><strong>API call patterns</strong> - EDR tools with kernel-level API hooking can still see the calls, even though they come from the Beacon process rather than a child.</li>
+        <li><strong>Memory scanning</strong> - the BOF code exists in Beacon's memory briefly. Memory scanning solutions can catch it during execution.</li>
+        <li><strong>Network artifacts</strong> - LDAP queries, SMB connections, and WMI calls still generate network traffic regardless of how they're initiated.</li>
+        <li><strong>Behavioral analytics</strong> - a process making LDAP enumeration queries followed by lateral movement attempts is suspicious regardless of whether it's using BOFs or traditional tools.</li>
+    </ul>
+
+    <a class="writeup-repo-link" href="https://github.com/redroot97/Cobalt_Strike_BOFs" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+        <span>view source on github</span>
+        <span class="arrow">-></span>
+    </a>
+
+</div>
+
+<footer>
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <h3><span class="at">@</span>redroot97</h3>
+            <p>Offensive security research, CVE advisories, and tooling notes by an offensive security engineer.</p>
+        </div>
+        <div class="footer-col">
+            <h4>// pages</h4>
+            <ul>
+                <li><a href="../index.html">research log</a></li>
+                <li><a href="../cves.html">cve advisories</a></li>
+                <li><a href="../whoami.html">whoami</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>// elsewhere</h4>
+            <ul>
+                <li><a href="https://github.com/redroot97" target="_blank">github ↗</a></li>
+                <li><a href="https://www.linkedin.com/in/redroot97" target="_blank">linkedin ↗</a></li>
+                <li><a href="mailto:atredroot97@gmail.com">email ↗</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div>© <span id="year"></span> @redroot97</div>
+    </div>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>

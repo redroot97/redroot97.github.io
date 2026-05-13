@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CVE advisories and vulnerability disclosures by @redroot97 - offensive security researcher.">
+    <title>cve advisories // @redroot97</title>
+    <link rel="stylesheet" href="css/style.css?v=20260514">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='75' font-family='monospace' font-size='80' font-weight='800' fill='%23ff3344'>@</text></svg>">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="index.html" class="nav-logo">
+            <span class="prompt">~/</span>redroot97<span class="cursor"></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html">research</a></li>
+            <li><a href="cves.html" class="active">cve</a></li>
+            <li><a href="whoami.html">whoami</a></li>
+            <li><a href="whoami.html#contact">contact</a></li>
+        </ul>
+        <a href="https://github.com/redroot97" target="_blank" rel="noopener" class="nav-github">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+            <span>github</span>
+        </a>
+    </div>
+</nav>
+
+<!-- HEADER -->
+<div class="page-header page-header-split page-header-cve">
+    <div class="page-header-grid-bg"></div>
+    <div class="page-header-inner">
+        <div class="page-header-text">
+            <div class="page-breadcrumb">
+                <a href="index.html">~/</a><span class="sep">/</span><span>cve-advisories</span>
+            </div>
+            <h1 class="page-title">cve <span class="glitch accent" data-text="advisories">advisories</span></h1>
+            <p class="page-subtitle">
+                Tracked vulnerabilities, coordinated disclosures, and reserved CVEs. All findings reported through responsible disclosure channels and credited where possible.
+            </p>
+
+            <div class="cve-summary cve-summary-inline">
+                <div class="cve-summary-item">
+                    <div class="cve-summary-value accent" id="total-count">9</div>
+                    <div class="cve-summary-label cve-summary-label-mixed">Total CVEs</div>
+                </div>
+                <div class="cve-summary-item">
+                    <div class="cve-summary-value" style="color:var(--green);" id="published-count">2</div>
+                    <div class="cve-summary-label">fixed - published</div>
+                </div>
+                <div class="cve-summary-item">
+                    <div class="cve-summary-value" style="color:var(--amber);" id="inprogress-count">7</div>
+                    <div class="cve-summary-label">fix in progress</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="research-art" aria-hidden="true">
+            <svg class="research-art-svg" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                <g stroke="#383838" stroke-width="0.6" opacity="0.45">
+                    <path d="M0 50 H500 M0 100 H500 M0 150 H500 M0 200 H500 M0 250 H500 M0 300 H500 M0 350 H500 M0 400 H500 M0 450 H500"/>
+                    <path d="M50 0 V500 M100 0 V500 M150 0 V500 M200 0 V500 M250 0 V500 M300 0 V500 M350 0 V500 M400 0 V500 M450 0 V500"/>
+                </g>
+
+                <g transform="translate(250 240)">
+                    <circle r="200" fill="none" stroke="#ff3344" stroke-opacity="0.14" stroke-width="0.9" stroke-dasharray="3 6"/>
+                    <circle r="155" fill="none" stroke="#ff3344" stroke-opacity="0.22" stroke-width="0.9" stroke-dasharray="2 5"/>
+                    <circle r="110" fill="none" stroke="#ff3344" stroke-opacity="0.36" stroke-width="0.9"/>
+                    <circle r="70"  fill="none" stroke="#ff3344" stroke-opacity="0.5"  stroke-width="0.9" stroke-dasharray="3 4"/>
+                    <line x1="-230" y1="0" x2="230" y2="0" stroke="#ff3344" stroke-opacity="0.55" stroke-width="1"/>
+                    <line x1="0" y1="-220" x2="0" y2="220" stroke="#ff3344" stroke-opacity="0.55" stroke-width="1"/>
+                </g>
+
+                <g transform="translate(170 130)" fill="none" stroke="#ececec" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M80 4 L150 28 L150 90 C150 132 122 168 80 184 C38 168 10 132 10 90 L10 28 Z" fill="#161616"/>
+                    <path d="M80 4 L150 28 L150 90 C150 132 122 168 80 184" stroke-opacity="0.9"/>
+                    <g stroke="#ff3344" stroke-width="4">
+                        <line x1="80" y1="60" x2="80" y2="108"/>
+                        <circle cx="80" cy="128" r="3.2" fill="#ff3344" stroke="none"/>
+                    </g>
+                </g>
+
+                <g transform="translate(290 290)" fill="#161616" stroke="#ececec" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="0" y="0" width="150" height="34" rx="4"/>
+                    <g font-family="'JetBrains Mono', monospace" font-size="13" font-weight="700" fill="#ff3344" stroke="none" letter-spacing="0.12em">
+                        <text x="14" y="22">CVE-2026</text>
+                    </g>
+                    <line x1="92" y1="17" x2="138" y2="17" stroke="#ececec" stroke-width="2.4" stroke-opacity="0.45"/>
+                </g>
+
+                <g transform="translate(90 310)" fill="#161616" stroke="#ececec" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 4 L42 4 L60 40 L24 40 L4 40 Z" fill="#ff3344" stroke="#ececec"/>
+                    <line x1="32" y1="16" x2="32" y2="26" stroke="#ececec" stroke-width="3"/>
+                    <circle cx="32" cy="33" r="1.8" fill="#ececec" stroke="none"/>
+                </g>
+            </svg>
+        </div>
+    </div>
+</div>
+
+<!-- TABLE SECTION -->
+<section class="cve-table-section">
+    <div class="container">
+
+        <div class="section-header">
+            <span class="section-marker">[0x01]</span>
+            <h2 class="section-title">tracked advisories</h2>
+            <span class="section-subtitle">// sorted: newest first</span>
+        </div>
+
+        <!-- CVE TABLE -->
+        <div style="overflow-x:auto;">
+            <table class="cve-table">
+                <thead>
+                    <tr>
+                        <th style="width:160px;">CVE ID</th>
+                        <th>Affected Product</th>
+                        <th>Class</th>
+                        <th>Severity</th>
+                        <th>Status</th>
+                        <th>Year</th>
+                    </tr>
+                </thead>
+                <tbody id="cve-table-body">
+                    <!-- populated by js/cves.js -->
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:48px;padding:24px;border:1px dashed var(--border-bright);background:var(--bg-elevated);font-size:13px;color:var(--text-dim);line-height:1.7;">
+            <strong style="color:var(--text);">// note on disclosure.</strong> Some entries are intentionally minimal while embargoes are active or vendors are finalizing patches. Full technical write-ups and PoCs ship to the <a href="index.html">research log</a> after public disclosure. Credits and links to vendor advisories are added as they go live.
+        </div>
+    </div>
+</section>
+
+<!-- DETAILED ADVISORIES -->
+<section>
+    <div class="container">
+        <div class="section-header">
+            <span class="section-marker">[0x02]</span>
+            <h2 class="section-title">detailed write-ups</h2>
+            <span class="section-subtitle">// post-disclosure only</span>
+        </div>
+
+        <div id="cve-detail-list">
+            <!-- populated by js/cves.js -->
+        </div>
+    </div>
+</section>
+
+<!-- DISCLOSURE PROCESS -->
+<section style="border-bottom:none;">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-marker">[0x03]</span>
+            <h2 class="section-title">disclosure policy</h2>
+            <span class="section-subtitle">// how I report</span>
+        </div>
+
+        <div class="grid grid-3">
+            <div class="card">
+                <div class="card-tag">[ step 01 ]</div>
+                <div class="card-title">Private Report</div>
+                <div class="card-desc">
+                    Findings sent directly to the vendor's security team via PSIRT, security.txt, or HackerOne / Bugcrowd / private programs. PGP-encrypted when supported.
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-tag">[ step 02 ]</div>
+                <div class="card-title">Coordinated Timeline</div>
+                <div class="card-desc">
+                    Standard 90-day window for vendor remediation. Extensions granted when patches are in flight. Earlier disclosure if exploitation is observed in the wild.
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-tag">[ step 03 ]</div>
+                <div class="card-title">Public Advisory</div>
+                <div class="card-desc">
+                    Once patches ship, a CVE is assigned and a detailed write-up - including reproduction steps and impact analysis - is published on this site and linked here.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <h3><span class="at">@</span>redroot97</h3>
+            <p>Offensive security research, CVE advisories, and tooling notes by an offensive security engineer.</p>
+        </div>
+        <div class="footer-col">
+            <h4>// pages</h4>
+            <ul>
+                <li><a href="index.html">research log</a></li>
+                <li><a href="cves.html">cve advisories</a></li>
+                <li><a href="whoami.html">whoami</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>// elsewhere</h4>
+            <ul>
+                <li><a href="https://github.com/redroot97" target="_blank">github ↗</a></li>
+                <li><a href="https://www.linkedin.com/in/redroot97" target="_blank">linkedin ↗</a></li>
+                <li><a href="mailto:atredroot97@gmail.com">email ↗</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div>© <span id="year"></span> @redroot97</div>
+    </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script src="js/cves.js"></script>
+</body>
+</html>

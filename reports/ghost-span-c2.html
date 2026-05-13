@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ghost Span - a C2 framework that hides implant traffic inside OpenTelemetry trace exports over OTLP/gRPC.">
+    <title>Ghost Span C2 // @redroot97</title>
+    <link rel="stylesheet" href="../css/style.css?v=20260514">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='75' font-family='monospace' font-size='80' font-weight='800' fill='%23ff3344'>@</text></svg>">
+</head>
+<body>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="../index.html" class="nav-logo">
+            <span class="prompt">~/</span>redroot97<span class="cursor"></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="../index.html" class="active">research</a></li>
+            <li><a href="../cves.html">cve</a></li>
+            <li><a href="../whoami.html">whoami</a></li>
+            <li><a href="../whoami.html#contact">contact</a></li>
+        </ul>
+        <a href="https://github.com/redroot97" target="_blank" rel="noopener" class="nav-github">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+            <span>github</span>
+        </a>
+    </div>
+</nav>
+
+<div class="page-header">
+    <div class="page-header-grid-bg"></div>
+    <div class="page-header-inner">
+        <div class="page-breadcrumb">
+            <a href="../index.html">~/</a><span class="sep">/</span><a href="../index.html">research</a><span class="sep">/</span><span>ghost-span-c2</span>
+        </div>
+        <h1 class="page-title">ghost <span class="glitch accent" data-text="span">span</span> c2</h1>
+        <p class="page-subtitle">Hiding command-and-control traffic inside OpenTelemetry trace exports.</p>
+    </div>
+</div>
+
+<div class="writeup-body">
+
+    <div class="writeup-meta">
+        <span class="meta-tag">c2</span>
+        <span class="meta-tag">red team</span>
+        <span class="meta-tag">opsec</span>
+        <span class="meta-sep"></span>
+        <span>2026.05</span>
+    </div>
+
+    <h2>// the problem with C2 traffic</h2>
+
+    <p>
+        Every C2 framework has the same fundamental problem: getting traffic out of a monitored network without triggering alerts. Custom protocols get flagged. HTTP callbacks to unknown domains get caught by proxy inspection. DNS tunneling is slow and increasingly detected. Even HTTPS to cloud providers raises eyebrows when the SNI doesn't match expected patterns.
+    </p>
+
+    <p>
+        But there's one protocol that flows freely through enterprise networks, often explicitly whitelisted by security teams: <strong>OpenTelemetry</strong>.
+    </p>
+
+    <h2>// why OpenTelemetry</h2>
+
+    <p>
+        OpenTelemetry (OTel) is the industry standard for exporting traces, metrics, and logs from applications to observability backends like Datadog, Splunk, Grafana, and New Relic. The protocol, OTLP, runs over gRPC on port 4317 and HTTP on port 4318.
+    </p>
+
+    <p>
+        In any enterprise running modern microservices, OTLP traffic is <strong>expected infrastructure noise</strong>. Security teams whitelist it. Network monitoring tools classify it as legitimate. Proxy rules let it through. This makes it an ideal channel for C2 communication.
+    </p>
+
+    <div class="callout">
+        <strong>Key insight:</strong> OTLP trace exports are structured as nested spans with arbitrary key-value attributes. The protocol is designed to carry unstructured metadata. Commands and exfiltrated data fit naturally into span attributes without violating the protocol spec.
+    </div>
+
+    <h2>// how Ghost Span works</h2>
+
+    <p>
+        Ghost Span is a full C2 framework built around this idea. The implant communicates with the server by sending valid <code>ExportTraceServiceRequest</code> messages over OTLP/gRPC. To any network inspector, it looks like a normal application exporting traces to a collector.
+    </p>
+
+    <h3>architecture</h3>
+
+    <div class="diagram"><span class="hl">[implant]</span>                    <span class="hl">[server]</span>                   <span class="hl">[operator]</span>
+ Go binary               Python/FastAPI + grpcio        Electron + React
+    |                           |                           |
+    |--- OTLP ExportTrace ----->|                           |
+    |    (beacon as spans)      |--- stores in SQLite ----->|
+    |                           |                           |
+    |                           |<-- operator queues cmd ---|
+    |<-- task in response ------|                           |
+    |                           |                           |
+    |--- result as spans ------>|--- displays output ------>|
+    |    (next beacon)          |                           |</div>
+
+    <h3>the beacon cycle</h3>
+
+    <ol>
+        <li>The implant constructs a valid OTLP trace export with span attributes containing system info (hostname, user, PID, OS).</li>
+        <li>It sends this as a standard <code>ExportTraceServiceRequest</code> to the server on port 4317 (gRPC) or 4318 (HTTP).</li>
+        <li>The server parses the span attributes, extracts the beacon data, and stores it in SQLite.</li>
+        <li>If the operator has queued a command, the server embeds it in the gRPC response metadata.</li>
+        <li>The implant executes the command and sends the output as span attributes in the next beacon.</li>
+    </ol>
+
+    <h3>anti-sandbox triage gate</h3>
+
+    <p>
+        Before an implant is promoted to a full agent, it has to pass a triage gate: <strong>2 successful beacons over a minimum of 30 seconds</strong>. This defeats automated sandboxes that detonate payloads for a few seconds and inspect network traffic. The implant stays dormant-looking until it's confirmed to be running on a real target.
+    </p>
+
+    <h2>// binary patching for config</h2>
+
+    <p>
+        The Go implant templates are compiled once and reused. Configuration (server address, callback interval, encryption keys) is injected at build time through <strong>binary placeholder patching</strong> - 128-byte <code>{{PLACEHOLDER_X}}</code> fields in the binary are overwritten with actual values. No recompilation needed per target. The operator desktop app handles this automatically.
+    </p>
+
+    <pre><code>// placeholder in Go source (compiled into binary)
+var serverAddr = "{{PLACEHOLDER_SERVER_ADDR________________________________}}"
+var callbackInterval = "{{PLACEHOLDER_CALLBACK_INTERVAL________________________}}"
+
+// at build time, binary search-and-replace fills these in:
+// {{PLACEHOLDER_SERVER_ADDR___...}} -> "10.10.14.5:4317"</code></pre>
+
+    <h2>// what makes it hard to detect</h2>
+
+    <ul>
+        <li><strong>Protocol compliance</strong> - traffic is valid OTLP. It will pass through any gRPC-aware proxy or OTel collector without errors.</li>
+        <li><strong>Expected ports</strong> - gRPC on 4317, HTTP on 4318. These are standard OTel ports that are often pre-approved in firewall rules.</li>
+        <li><strong>Legitimate TLS</strong> - the server generates valid TLS certificates. Traffic is encrypted end-to-end.</li>
+        <li><strong>Blends with telemetry noise</strong> - in environments already running OTel, Ghost Span beacons are indistinguishable from real trace exports at the network layer.</li>
+        <li><strong>No custom protocol markers</strong> - there are no magic bytes, custom headers, or unusual user-agent strings. Everything follows the OTLP spec.</li>
+    </ul>
+
+    <h2>// components</h2>
+
+    <p>
+        <strong>Server</strong> - Python FastAPI application with dual gRPC (port 4317) and HTTP (port 4318) listeners. Uses grpcio for OTLP message parsing. SQLite backend for agent tracking and task queuing. TLS with auto-generated certificates.
+    </p>
+
+    <p>
+        <strong>Desktop client</strong> - Electron application with a React frontend. Manages agents, queues commands, compiles and patches implant binaries. Embeds a Go 1.22 SDK and llvm-mingw for cross-compilation to Windows, Linux, and macOS from any platform.
+    </p>
+
+    <p>
+        <strong>Implant templates</strong> - Go binaries compiled for multiple OS/arch combinations. Templates include DLLs, shared objects, and standalone executables. Each template has placeholder fields that get patched with target-specific config at generation time.
+    </p>
+
+    <h2>// detection considerations</h2>
+
+    <p>
+        If you're on the blue side and want to detect this pattern:
+    </p>
+
+    <ul>
+        <li>Monitor for OTLP exports to destinations that aren't your authorized OTel collectors.</li>
+        <li>Inspect span attribute names and values for anomalies - real application traces have consistent attribute schemas, C2 beacons don't.</li>
+        <li>Correlate OTLP traffic sources against known instrumented services. A process sending OTel data that isn't in your service catalog is suspicious.</li>
+        <li>Watch for the triage pattern: exactly 2 short beacons followed by regular interval callbacks from a new source.</li>
+    </ul>
+
+    <a class="writeup-repo-link" href="https://github.com/redroot97/Ghost_Span_C2" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+        <span>view source + poc on github</span>
+        <span class="arrow">-></span>
+    </a>
+
+</div>
+
+<footer>
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <h3><span class="at">@</span>redroot97</h3>
+            <p>Offensive security research, CVE advisories, and tooling notes by an offensive security engineer.</p>
+        </div>
+        <div class="footer-col">
+            <h4>// pages</h4>
+            <ul>
+                <li><a href="../index.html">research log</a></li>
+                <li><a href="../cves.html">cve advisories</a></li>
+                <li><a href="../whoami.html">whoami</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>// elsewhere</h4>
+            <ul>
+                <li><a href="https://github.com/redroot97" target="_blank">github ↗</a></li>
+                <li><a href="https://www.linkedin.com/in/redroot97" target="_blank">linkedin ↗</a></li>
+                <li><a href="mailto:atredroot97@gmail.com">email ↗</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div>© <span id="year"></span> @redroot97</div>
+    </div>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>

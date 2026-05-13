@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chrome Native Messaging Host shadow attack - hijacking extension-to-native-app communication by exploiting manifest resolution order.">
+    <title>Chrome NMH Shadow Attack // @redroot97</title>
+    <link rel="stylesheet" href="../css/style.css?v=20260514">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='75' font-family='monospace' font-size='80' font-weight='800' fill='%23ff3344'>@</text></svg>">
+</head>
+<body>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="../index.html" class="nav-logo">
+            <span class="prompt">~/</span>redroot97<span class="cursor"></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="../index.html" class="active">research</a></li>
+            <li><a href="../cves.html">cve</a></li>
+            <li><a href="../whoami.html">whoami</a></li>
+            <li><a href="../whoami.html#contact">contact</a></li>
+        </ul>
+        <a href="https://github.com/redroot97" target="_blank" rel="noopener" class="nav-github">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+            <span>github</span>
+        </a>
+    </div>
+</nav>
+
+<div class="page-header">
+    <div class="page-header-grid-bg"></div>
+    <div class="page-header-inner">
+        <div class="page-breadcrumb">
+            <a href="../index.html">~/</a><span class="sep">/</span><a href="../index.html">research</a><span class="sep">/</span><span>chrome-nmh-shadow</span>
+        </div>
+        <h1 class="page-title">nmh <span class="glitch accent" data-text="shadow">shadow</span> attack</h1>
+        <p class="page-subtitle">Hijacking Chrome extension communication by shadowing Native Messaging Host manifests.</p>
+    </div>
+</div>
+
+<div class="writeup-body">
+
+    <div class="writeup-meta">
+        <span class="meta-tag">macos</span>
+        <span class="meta-tag">persistence</span>
+        <span class="meta-tag">chrome</span>
+        <span class="meta-sep"></span>
+        <span>2026.04</span>
+    </div>
+
+    <h2>// what are Native Messaging Hosts</h2>
+
+    <p>
+        Chrome extensions run in a sandboxed environment and can't directly interact with the operating system. When an extension needs to communicate with a native application - reading files, launching processes, accessing hardware - it uses <strong>Native Messaging</strong>. This is Chrome's official mechanism for extension-to-native-app IPC.
+    </p>
+
+    <p>
+        The bridge between the two is a <strong>Native Messaging Host (NMH) manifest</strong>: a JSON file that tells Chrome which binary to launch when an extension requests a native connection. Many enterprise tools use this pattern - endpoint agents, password managers, security software, and monitoring tools all register NMH manifests to communicate with their Chrome extensions.
+    </p>
+
+    <h2>// the resolution order problem</h2>
+
+    <p>
+        On macOS, Chrome looks for NMH manifests in two locations, in this order:
+    </p>
+
+    <ol>
+        <li><strong>User-level</strong> - <code>~/Library/Application Support/Google/Chrome/NativeMessagingHosts/</code></li>
+        <li><strong>System-level</strong> - <code>/Library/Google/Chrome/NativeMessagingHosts/</code></li>
+    </ol>
+
+    <div class="callout">
+        <strong>Key insight:</strong> Chrome checks user-level first. If a manifest with the same name exists in both locations, the user-level manifest wins. This means any unprivileged user can shadow a system-level NMH manifest without modifying protected directories.
+    </div>
+
+    <p>
+        This is by design - Chrome intends for user-level manifests to override system-level ones. But from an attacker's perspective, this is a privilege-free hijack of trusted IPC channels.
+    </p>
+
+    <h2>// the attack flow</h2>
+
+    <div class="diagram"><span class="hl">[Chrome Extension]</span>
+      |
+      | "connect to com.example.nmh"
+      v
+<span class="hl">[Chrome NMH Resolution]</span>
+      |
+      | 1. check ~/Library/.../NativeMessagingHosts/com.example.nmh.json
+      |    FOUND -> use this one (attacker's shadow manifest)
+      |
+      | 2. check /Library/.../NativeMessagingHosts/com.example.nmh.json
+      |    NEVER REACHED
+      v
+<span class="hl">[Attacker's Binary]</span>  <-- intercepts all NMH traffic
+      |
+      | logs messages, optionally proxies to real binary
+      v
+<span class="hl">[Real NMH Binary]</span>  <-- (optional) still processes normally</div>
+
+    <h3>step by step</h3>
+
+    <ol>
+        <li><strong>Identify the target NMH</strong> - list manifests in <code>/Library/Google/Chrome/NativeMessagingHosts/</code>. Each <code>.json</code> file names a native messaging host used by an extension.</li>
+        <li><strong>Read the manifest</strong> - the JSON file contains the NMH name, path to the native binary, allowed extension IDs, and communication type (stdio).</li>
+        <li><strong>Create a shadow manifest</strong> - copy the manifest to the user-level directory (<code>~/Library/Application Support/Google/Chrome/NativeMessagingHosts/</code>), but change the <code>path</code> field to point to your binary.</li>
+        <li><strong>Drop the interceptor</strong> - place your binary at the path specified in the shadow manifest. This binary receives all messages the extension sends to the NMH.</li>
+        <li><strong>Proxy or replace</strong> - optionally forward messages to the real NMH binary so the extension continues to function normally while you capture everything in transit.</li>
+    </ol>
+
+    <h2>// what gets intercepted</h2>
+
+    <p>
+        The data flowing through NMH channels depends on the target. Common enterprise NMH use cases and what an attacker captures:
+    </p>
+
+    <ul>
+        <li><strong>Endpoint management agents</strong> - device enrollment tokens, compliance status, MDM commands, security policy data.</li>
+        <li><strong>Password managers</strong> - credential autofill requests, vault unlock events, saved login data being sent to the browser extension.</li>
+        <li><strong>SSO/auth extensions</strong> - session tokens, SAML assertions, OAuth flows between the extension and the native SSO agent.</li>
+        <li><strong>Security tools</strong> - DLP scan results, URL reputation lookups, browser isolation decisions.</li>
+    </ul>
+
+    <h2>// why this is dangerous</h2>
+
+    <p>
+        <strong>No privileges required.</strong> The user-level NMH directory is writable by the current user. No root, no admin, no TCC prompts, no entitlements. Any process running as the logged-in user can drop a shadow manifest.
+    </p>
+
+    <p>
+        <strong>No user interaction.</strong> The shadow takes effect the next time Chrome launches the NMH connection. The user sees nothing different - the extension works normally because the interceptor proxies traffic through.
+    </p>
+
+    <p>
+        <strong>Survives updates.</strong> Enterprise tools update their system-level manifests in <code>/Library/</code>. The user-level shadow in <code>~/Library/</code> is untouched by these updates and continues to take priority.
+    </p>
+
+    <h2>// targeting</h2>
+
+    <p>
+        To find targets on a given machine, enumerate existing system-level NMH manifests:
+    </p>
+
+    <pre><code>ls /Library/Google/Chrome/NativeMessagingHosts/
+# com.example.nmh.json
+# com.vendor.agent.json
+
+cat /Library/Google/Chrome/NativeMessagingHosts/com.example.nmh.json
+# {
+#   "name": "com.example.nmh",
+#   "description": "Example NMH bridge",
+#   "path": "/opt/example-agent/nmh-bridge",
+#   "type": "stdio",
+#   "allowed_origins": [
+#     "chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/"
+#   ]
+# }</code></pre>
+
+    <p>
+        The POC takes configurable variables at the top of the Swift source - set the NMH name, extension ID, and real binary path to target any installed NMH.
+    </p>
+
+    <h2>// compile and run</h2>
+
+    <pre><code># edit the target variables in nmh-shadow-poc.swift:
+#   let nmhName = "com.example.nmh"
+#   let extensionId = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+#   let realBinary = "/opt/example-agent/nmh-bridge"
+
+swiftc nmh-shadow-poc.swift -o nmh-shadow-poc
+./nmh-shadow-poc</code></pre>
+
+    <p>
+        The POC creates the user-level directory if needed, drops the shadow manifest and interceptor binary, and demonstrates message capture. Restart Chrome (or the target extension) to activate the shadow.
+    </p>
+
+    <h2>// detection</h2>
+
+    <ul>
+        <li><strong>Monitor the user-level NMH directory</strong> - any file creation in <code>~/Library/Application Support/Google/Chrome/NativeMessagingHosts/</code> should be investigated. Legitimate software installs to the system-level path.</li>
+        <li><strong>Compare manifest sets</strong> - if the same NMH name exists at both user and system level, something is wrong.</li>
+        <li><strong>Binary path validation</strong> - check that the <code>path</code> field in user-level manifests points to a signed, expected binary.</li>
+        <li><strong>File system auditing</strong> - endpoint telemetry (EDR) should flag writes to the Chrome NMH directories.</li>
+    </ul>
+
+    <a class="writeup-repo-link" href="https://github.com/redroot97/macOS" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+        <span>view source + poc on github</span>
+        <span class="arrow">-></span>
+    </a>
+
+</div>
+
+<footer>
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <h3><span class="at">@</span>redroot97</h3>
+            <p>Offensive security research, CVE advisories, and tooling notes by an offensive security engineer.</p>
+        </div>
+        <div class="footer-col">
+            <h4>// pages</h4>
+            <ul>
+                <li><a href="../index.html">research log</a></li>
+                <li><a href="../cves.html">cve advisories</a></li>
+                <li><a href="../whoami.html">whoami</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>// elsewhere</h4>
+            <ul>
+                <li><a href="https://github.com/redroot97" target="_blank">github ↗</a></li>
+                <li><a href="https://www.linkedin.com/in/redroot97" target="_blank">linkedin ↗</a></li>
+                <li><a href="mailto:atredroot97@gmail.com">email ↗</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div>© <span id="year"></span> @redroot97</div>
+    </div>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>

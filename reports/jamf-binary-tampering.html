@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="JAMF binary tampering - replacing the macOS MDM agent binary with a wrapper to intercept all management operations.">
+    <title>JAMF Binary Tampering // @redroot97</title>
+    <link rel="stylesheet" href="../css/style.css?v=20260514">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='75' font-family='monospace' font-size='80' font-weight='800' fill='%23ff3344'>@</text></svg>">
+</head>
+<body>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="../index.html" class="nav-logo">
+            <span class="prompt">~/</span>redroot97<span class="cursor"></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="../index.html" class="active">research</a></li>
+            <li><a href="../cves.html">cve</a></li>
+            <li><a href="../whoami.html">whoami</a></li>
+            <li><a href="../whoami.html#contact">contact</a></li>
+        </ul>
+        <a href="https://github.com/redroot97" target="_blank" rel="noopener" class="nav-github">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+            <span>github</span>
+        </a>
+    </div>
+</nav>
+
+<div class="page-header">
+    <div class="page-header-grid-bg"></div>
+    <div class="page-header-inner">
+        <div class="page-breadcrumb">
+            <a href="../index.html">~/</a><span class="sep">/</span><a href="../index.html">research</a><span class="sep">/</span><span>jamf-binary-tampering</span>
+        </div>
+        <h1 class="page-title">jamf binary <span class="glitch accent" data-text="tampering">tampering</span></h1>
+        <p class="page-subtitle">Hijacking macOS MDM agents by replacing the JAMF binary with a transparent wrapper.</p>
+    </div>
+</div>
+
+<div class="writeup-body">
+
+    <div class="writeup-meta">
+        <span class="meta-tag">macos</span>
+        <span class="meta-tag">mdm bypass</span>
+        <span class="meta-tag">red team</span>
+        <span class="meta-sep"></span>
+        <span>2026.04</span>
+    </div>
+
+    <h2>// what is JAMF</h2>
+
+    <p>
+        JAMF Pro is the most widely deployed MDM (Mobile Device Management) solution for macOS in enterprise environments. It manages everything from software deployment and configuration profiles to security policies and compliance enforcement. The agent binary sits at <code>/usr/local/jamf/bin/jamf</code> and runs as root.
+    </p>
+
+    <p>
+        When JAMF needs to enforce a policy, push a configuration, or run an inventory check, it invokes this binary. The management server trusts that this binary is the legitimate JAMF agent. <strong>But nothing stops an attacker with root access from replacing it.</strong>
+    </p>
+
+    <h2>// the attack surface</h2>
+
+    <p>
+        The JAMF binary path is predictable and well-documented. On a managed Mac, it's always at <code>/usr/local/jamf/bin/jamf</code>. The binary is a standard Mach-O executable with no integrity verification beyond what the filesystem provides. There's no code-signing check at runtime by the JAMF framework itself, and the management server identifies the agent by its network communication, not by validating the binary hash.
+    </p>
+
+    <div class="callout">
+        <strong>Root cause:</strong> the JAMF agent trusts its own binary path. If you can write to that path, you control the agent. On a compromised machine with root, the attacker already has write access to <code>/usr/local/jamf/bin/</code>.
+    </div>
+
+    <h2>// how the tampering works</h2>
+
+    <ol>
+        <li><strong>Back up the original binary</strong> - move the real <code>jamf</code> to a hidden location like <code>/usr/local/jamf/bin/.jamf.real</code>.</li>
+        <li><strong>Drop a wrapper script</strong> - place a shell script (or compiled binary) at the original path that intercepts all calls.</li>
+        <li><strong>Log and forward</strong> - the wrapper logs every command and argument it receives, then passes the call through to the real binary so JAMF operations continue normally.</li>
+        <li><strong>Selective interception</strong> - optionally modify, block, or inject responses for specific JAMF operations.</li>
+    </ol>
+
+    <h3>what the wrapper sees</h3>
+
+    <div class="diagram"><span class="hl">[JAMF Server]</span>
+      |
+      | "run policy -id 42"
+      v
+<span class="hl">[/usr/local/jamf/bin/jamf]</span>  <-- now the wrapper
+      |
+      | logs: "policy -id 42 at 2026-04-10T14:22:01"
+      | can modify, block, or pass through
+      v
+<span class="hl">[/usr/local/jamf/bin/.jamf.real]</span>  <-- original binary
+      |
+      | executes normally
+      v
+<span class="hl">[JAMF Server]</span>  <-- sees normal response, no anomaly</div>
+
+    <h2>// what you can intercept</h2>
+
+    <p>
+        Once the wrapper is in place, every JAMF operation passes through it. This includes:
+    </p>
+
+    <ul>
+        <li><strong>Policy execution</strong> - see what policies the server is pushing, modify them before execution, or silently drop security-related ones.</li>
+        <li><strong>Inventory collection</strong> - tamper with hardware/software inventory data reported back to the server. Make the compromised machine look compliant.</li>
+        <li><strong>Configuration profiles</strong> - intercept profile installations. Block security profiles while letting others through.</li>
+        <li><strong>Software deployment</strong> - see what packages are being pushed. Swap binaries. Inject payloads into legitimate software deployments.</li>
+        <li><strong>Check-in traffic</strong> - monitor when the machine checks in with the server, what data it sends, and what commands come back.</li>
+    </ul>
+
+    <h2>// persistence value</h2>
+
+    <p>
+        This technique doubles as a persistence mechanism. The wrapper survives JAMF policy runs because JAMF uses its own binary to execute policies - which is now the wrapper. Even a "reinstall JAMF agent" policy would be intercepted by the wrapper before it could replace it.
+    </p>
+
+    <p>
+        The wrapper can also hide itself from JAMF inventory. When the server requests the binary hash for compliance, the wrapper returns the hash of the original binary instead of its own.
+    </p>
+
+    <h2>// detection</h2>
+
+    <p>
+        This is a post-exploitation technique that requires root. Detection focuses on filesystem integrity and behavioral anomalies:
+    </p>
+
+    <ul>
+        <li><strong>File hash monitoring</strong> - compare the hash of <code>/usr/local/jamf/bin/jamf</code> against the known-good JAMF binary hash. This is the most reliable detection.</li>
+        <li><strong>Mach-O header check</strong> - the real JAMF binary is a compiled Mach-O. If it's been replaced with a shell script, the file type changes.</li>
+        <li><strong>File modification timestamps</strong> - monitor mtime/ctime on the JAMF binary. Legitimate JAMF updates change these, but so does tampering.</li>
+        <li><strong>Process tree analysis</strong> - the real jamf binary forks differently than a wrapper script. Look for <code>bash</code> or <code>sh</code> as a parent of jamf operations.</li>
+        <li><strong>Endpoint telemetry</strong> - EDR tools that monitor <code>/usr/local/jamf/bin/</code> for file writes will catch the swap in real time.</li>
+    </ul>
+
+    <div class="callout">
+        <strong>Blue team note:</strong> the simplest detection is a cron job or launch daemon that periodically hashes the JAMF binary and alerts if it changes outside of a known JAMF upgrade window.
+    </div>
+
+    <h2>// compile and run</h2>
+
+    <p>
+        The POC is a single Swift file. Compile with <code>swiftc</code> (included with Xcode Command Line Tools):
+    </p>
+
+    <pre><code>swiftc jamf-tamper-poc.swift -o jamf-tamper-poc
+sudo ./jamf-tamper-poc</code></pre>
+
+    <p>
+        The POC backs up the original binary, drops the wrapper, and demonstrates interception of a JAMF policy run. Cleanup instructions are included in the repo README.
+    </p>
+
+    <a class="writeup-repo-link" href="https://github.com/redroot97/macOS" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+        <span>view source + poc on github</span>
+        <span class="arrow">-></span>
+    </a>
+
+</div>
+
+<footer>
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <h3><span class="at">@</span>redroot97</h3>
+            <p>Offensive security research, CVE advisories, and tooling notes by an offensive security engineer.</p>
+        </div>
+        <div class="footer-col">
+            <h4>// pages</h4>
+            <ul>
+                <li><a href="../index.html">research log</a></li>
+                <li><a href="../cves.html">cve advisories</a></li>
+                <li><a href="../whoami.html">whoami</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>// elsewhere</h4>
+            <ul>
+                <li><a href="https://github.com/redroot97" target="_blank">github ↗</a></li>
+                <li><a href="https://www.linkedin.com/in/redroot97" target="_blank">linkedin ↗</a></li>
+                <li><a href="mailto:atredroot97@gmail.com">email ↗</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div>© <span id="year"></span> @redroot97</div>
+    </div>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>

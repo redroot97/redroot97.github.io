@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="@redroot97 - offensive security researcher, red team operator, CVE hunter. Building, breaking, and writing about adversary simulation.">
+    <meta name="author" content="@redroot97">
+    <meta property="og:title" content="@redroot97 // whoami">
+    <meta property="og:description" content="Senior Security Engineer. Red Team Operator. CVE researcher. Building offensive tools and breaking enterprise infrastructure.">
+    <meta property="og:type" content="website">
+    <title>@redroot97 // whoami</title>
+    <link rel="stylesheet" href="css/style.css?v=20260514">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='75' font-family='monospace' font-size='80' font-weight='800' fill='%23ff3344'>@</text></svg>">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="index.html" class="nav-logo">
+            <span class="prompt">~/</span>redroot97<span class="cursor"></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="index.html">research</a></li>
+            <li><a href="cves.html">cve</a></li>
+            <li><a href="whoami.html" class="active">whoami</a></li>
+            <li><a href="#contact">contact</a></li>
+        </ul>
+        <a href="https://github.com/redroot97" target="_blank" rel="noopener" class="nav-github">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+            <span>github</span>
+        </a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero whoami-hero">
+    <div class="hero-grid-bg"></div>
+    <div class="hero-content">
+        <div class="hero-intro">
+            <div class="hero-intro-text">
+                <div class="page-breadcrumb whoami-breadcrumb">
+                    <a href="index.html">~/</a><span class="sep">/</span><span>whoami</span>
+                </div>
+                <h1 class="page-title whoami-title">
+                    <span class="at-white">@</span><span class="glitch redroot-red" data-text="redroot97">redroot97</span>
+                </h1>
+
+                <p class="hero-subtitle">
+                    Senior offensive security engineer. Actively leading <span class="highlight">red team operations, purple-team validation, and enterprise penetration testing</span> across web, Active Directory, and cloud estates. Ongoing offensive-side research covers adversary simulation, custom tooling, and CVE discovery - partnering with detection engineering to harden the systems I break.
+                </p>
+            </div>
+            <div class="hero-profile">
+                <div class="hero-profile-frame">
+                    <svg class="hero-profile-svg" viewBox="-30 -30 460 660" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="@redroot97">
+                        <defs>
+                            <filter id="rough-edge" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+                                <feTurbulence type="fractalNoise" baseFrequency="0.016 0.02" numOctaves="3" seed="9" result="big"/>
+                                <feTurbulence type="fractalNoise" baseFrequency="0.14" numOctaves="2" seed="21" result="grain"/>
+                                <feDisplacementMap in="SourceGraphic" in2="big" scale="32" xChannelSelector="R" yChannelSelector="G" result="d1"/>
+                                <feDisplacementMap in="d1" in2="grain" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+                            </filter>
+                            <mask id="torn-paper-mask" maskUnits="userSpaceOnUse" x="-40" y="-40" width="480" height="680">
+                                <rect x="-40" y="-40" width="480" height="680" fill="black"/>
+                                <g filter="url(#rough-edge)">
+                                    <rect x="0" y="0" width="400" height="600" fill="white"/>
+                                </g>
+                            </mask>
+                        </defs>
+                        <image href="images/profile.png" x="0" y="0" width="400" height="600" preserveAspectRatio="xMidYMid slice" mask="url(#torn-paper-mask)"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="hero-stat-label hero-stat-label-mixed">CVEs</div>
+                <div class="hero-stat-value" style="color:var(--accent);">9</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-label">YRS OFFENSIVE</div>
+                <div class="hero-stat-value" style="color:var(--green);">7+</div>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-label">CERTS</div>
+                <div class="hero-stat-value" style="color:var(--amber);">7</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- WHOAMI -->
+<section id="whoami">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-marker">[0x01]</span>
+            <h2 class="section-title">$ whoami</h2>
+            <span class="section-subtitle">// the short version</span>
+        </div>
+
+        <div class="whoami-grid">
+            <div class="whoami-text">
+                <p>
+                    Senior Security Engineer specializing in <strong>offensive operations</strong>, adversary simulation, and the discovery of high-impact vulnerabilities across enterprise environments. Currently leading red team engagements at a Fortune 50 healthcare organization.
+                </p>
+                <p>
+                    Seven years of progressive experience across <strong>web, mobile, thick-client, and API penetration testing</strong>, <strong>Active Directory and cloud red teaming</strong>, and <strong>C2 infrastructure development</strong>. Author of custom offensive tooling, including the <span class="accent">EBCDitor</span> Burp extension for EBCDIC-encoded IBM mainframe traffic, Cobalt Strike BOFs for engagement-specific tradecraft, and automation pipelines that map adversary TTPs to MITRE ATT&amp;CK and route them into purple-team workflows.
+                </p>
+                <p>
+                    Current research focuses on <strong>CVE discovery</strong> in third-party enterprise software, integration of large language models into offensive telemetry analysis, and detection-friendly red team infrastructure built around VECTR, BloodHound Enterprise, and Brute Ratel C2.
+                </p>
+                <p>
+                    Interested in advancing red team programs, adversary-simulation capabilities, and offensive research collaboration - <a href="#contact">reach out</a>.
+                </p>
+            </div>
+
+            <div class="terminal-card">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">redroot97@kali:~</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-line"><span class="prompt">$</span> <span class="cmd">whoami --verbose</span></div>
+                    <div class="terminal-line">&nbsp;</div>
+                    <div class="terminal-line"><span class="key">handle</span>........: <span class="val">@redroot97</span></div>
+                    <div class="terminal-line"><span class="key">role</span>..........: <span class="val">Sr. Security Engineer</span></div>
+                    <div class="terminal-line"><span class="key">focus</span>.........: <span class="val">red team // pentesting // purple team // adversary sim</span></div>
+                    <div class="terminal-line"><span class="key">specialty</span>.....: <span class="val">web, AD, cloud, mobile, thick-client, network, IoT</span></div>
+                    <div class="terminal-line"><span class="key">edu</span>...........: <span class="val">M.S. Cybersecurity, UNCC</span></div>
+                    <div class="terminal-line terminal-line-certs"><span class="key">certs</span>.........: <span class="val">OSCP, OSEP, CRTP, CESP, CEH, CRTO, CRTO 2</span></div>
+                    <div class="terminal-line"><span class="key">location</span>......: <span class="val">United States</span></div>
+                    <div class="terminal-line"><span class="key">cves</span>..........: <span class="val">2 reserved // more pending</span></div>
+                    <div class="terminal-line">&nbsp;</div>
+                    <div class="terminal-line"><span class="prompt">$</span> <span class="cmd">_</span><span class="cursor" style="background:var(--green);box-shadow:0 0 8px var(--green);"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- WHAT I DO -->
+<section id="capabilities">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-marker">[0x02]</span>
+            <h2 class="section-title">$ ls ./capabilities</h2>
+            <span class="section-subtitle">// what I actually ship</span>
+        </div>
+
+        <div class="grid grid-3">
+            <div class="card">
+                <div class="card-tag">[ engagement ]</div>
+                <div class="card-title">Red Team Operations</div>
+                <div class="card-desc">
+                    End-to-end adversary simulation against enterprise environments. C2 infrastructure with Cobalt Strike &amp; Brute Ratel. Custom BOFs, OPSEC-aware payloads, AD exploitation, lateral movement, persistence.
+                </div>
+                <div class="card-meta">
+                    <span>cobalt-strike</span>
+                    <span>brute-ratel</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-tag">[ assessment ]</div>
+                <div class="card-title">Application Pentesting</div>
+                <div class="card-desc">
+                    Web, mobile, thick-client, and API assessments. Mainframe pentesting via TN3270/EBCDIC. iOS reversing. Source-code review. Hunting auth/access bypasses, deserialization, race conditions.
+                </div>
+                <div class="card-meta">
+                    <span>burp</span>
+                    <span>mobsf</span>
+                    <span>corellium</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-tag">[ platform ]</div>
+                <div class="card-title">Enterprise Purple Team Platform</div>
+                <div class="card-desc">
+                    Designed and built an <strong>enterprise-grade purple team platform</strong> - functionally comparable to <span class="text-accent">Cymulate</span> - that continuously executes MITRE ATT&amp;CK TTPs against production systems. Deep <strong>AWS Bedrock</strong> integration drives AI-assisted telemetry triage, detection-gap analysis, and detection-engineering feedback loops, with results piped into VECTR and Attack Forge.
+                </div>
+                <div class="card-meta">
+                    <span>aws-bedrock</span>
+                    <span>vectr</span>
+                    <span>mitre-att&amp;ck</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-tag">[ research ]</div>
+                <div class="card-title">CVE Hunting</div>
+                <div class="card-desc">
+                    Vulnerability research in enterprise software, EDR/security tooling, and infrastructure components. Coordinated disclosure. Recent reservations target widely-deployed products.
+                </div>
+                <div class="card-meta">
+                    <a href="cves.html" style="color:var(--accent)">→ see advisories</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-tag">[ cloud ]</div>
+                <div class="card-title">Cloud + Kubernetes</div>
+                <div class="card-desc">
+                    AWS attack paths, container escapes, K8s cluster hardening. Built DNS-vulnerability automation at Amazon - dangling NS/A/CNAME detection across the org's record set.
+                </div>
+                <div class="card-meta">
+                    <span>aws</span>
+                    <span>k8s</span>
+                    <span>kube-hunter</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-tag">[ tooling ]</div>
+                <div class="card-title">Custom Offensive Tools</div>
+                <div class="card-desc">
+                    I write tools when the existing ones don't fit. <span class="text-accent">EBCDitor</span> Burp extension for mainframe traffic. Detection-aware C2 BOFs.
+                </div>
+                <div class="card-meta">
+                    <a href="https://github.com/redroot97" target="_blank" style="color:var(--accent)">→ github</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-marker">[0x03]</span>
+            <h2 class="section-title">$ cat ./experience</h2>
+            <span class="section-subtitle">// trail</span>
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-item current">
+                <div class="timeline-date">JAN 2025 - PRESENT</div>
+                <div class="timeline-role">Senior Security Engineer</div>
+                <div class="timeline-company">CVS Health (Fortune 50 Healthcare) - Remote</div>
+                <div class="timeline-desc">
+                    <ul>
+                        <li>Lead red team and pentesting across enterprise services and infrastructure; collaborate with engineering to drive remediation of high-impact findings.</li>
+                        <li>Identified high-severity vulnerabilities in <strong>Zscaler configurations</strong> and <strong>macOS security controls</strong> enabling privilege escalation and policy bypass.</li>
+                        <li>Designed red team infrastructure integrating <strong>VECTR</strong> and <strong>Attack Forge</strong> to automate adversary-simulation tracking.</li>
+                        <li>Designed and built an <strong>enterprise-grade purple team platform</strong> - functionally comparable to <strong>Cymulate</strong> - that continuously executes MITRE ATT&amp;CK techniques against production systems, with deep <strong>AWS Bedrock</strong> integration driving AI-assisted telemetry triage, detection-gap analysis, and detection-engineering feedback loops.</li>
+                        <li>Developed <strong>Grafana</strong> dashboards for red team operations, BloodHound Enterprise data, and pentest metrics.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-date">MAR 2023 - JAN 2025</div>
+                <div class="timeline-role">Red Team / Penetration Tester</div>
+                <div class="timeline-company">Northwestern Mutual (Fortune 500 Financial Services) - Milwaukee</div>
+                <div class="timeline-desc">
+                    <ul>
+                        <li>Web, mobile, thick-client, and network pentesting at scale.</li>
+                        <li>Designed and executed <strong>threat injections</strong> mapped to MITRE TTPs for continuous offensive monitoring.</li>
+                        <li>Wrote <strong>Cobalt Strike BOFs</strong> used in active threat-simulation engagements.</li>
+                        <li>Implemented red team testing infrastructure with <strong>Brute Ratel C2</strong>.</li>
+                        <li>Onboarded applications into the DAST pipeline alongside DevSecOps.</li>
+                        <li>Partnered with IR &amp; Detection Engineering to write detections for every TTP fired.</li>
+                        <li>Authored <strong>EBCDitor</strong>, a Burp extension for decoding/editing/re-encoding EBCDIC traffic to IBM 3278-2 mainframe terminals over TN3270.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-date">MAY 2022 - AUG 2022</div>
+                <div class="timeline-role">Security Engineer - Intern</div>
+                <div class="timeline-company">Amazon - Seattle</div>
+                <div class="timeline-desc">
+                    <ul>
+                        <li>Implemented DNS security controls across Amazon's internal infrastructure.</li>
+                        <li>Built automated scripts to detect <strong>dangling DNS</strong> records (NS, A, CNAME) and generate datasets for the consumer security team.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-date">JAN 2020 - MAY 2021</div>
+                <div class="timeline-role">Security Consultant</div>
+                <div class="timeline-company">SecureLayer7 - India</div>
+                <div class="timeline-desc">
+                    <ul>
+                        <li>Red team engagements against AD-heavy environments. VA/PT on thick clients, Kubernetes, Docker, iOS, IoT, and AWS.</li>
+                        <li>Onsite insider-threat pentests; social engineering when required.</li>
+                        <li>Managed AWS-hosted CTF infrastructure; performed security configuration reviews on it.</li>
+                        <li>Produced advisory reports on 0-day exploits and CVE-class vulnerabilities.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-date">AUG 2021 - DEC 2022</div>
+                <div class="timeline-role">Teaching Assistant - Secure Programming &amp; Pentesting</div>
+                <div class="timeline-company">University of North Carolina, Charlotte</div>
+                <div class="timeline-desc">
+                    <ul>
+                        <li>Built vulnerable labs for XSS, SQLi, broken access, buffer overflow.</li>
+                        <li>Authored and ran source-code-review CTF challenges as graded assignments.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="timeline-item">
+                <div class="timeline-date">JAN 2019 - JAN 2020</div>
+                <div class="timeline-role">Junior Cybersecurity Analyst</div>
+                <div class="timeline-company">Wity Technology Corporation - India</div>
+                <div class="timeline-desc">
+                    <ul>
+                        <li>Network &amp; wireless pentesting. Web and mobile VA/PT.</li>
+                        <li>Built secure virtual labs for exploit development &amp; PoC creation.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ARSENAL -->
+<section id="arsenal">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-marker">[0x04]</span>
+            <h2 class="section-title">$ ./arsenal --list</h2>
+            <span class="section-subtitle">// tools // certs // stack</span>
+        </div>
+
+        <div class="grid grid-2">
+            <div>
+                <h3 style="font-size:14px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:8px;">// certifications</h3>
+                <div class="tag-cloud">
+                    <span class="tag cert">OSCP</span>
+                    <span class="tag cert">OSEP</span>
+                    <span class="tag cert">CRTP</span>
+                    <span class="tag cert">CRTO</span>
+                    <span class="tag cert">CRTO 2</span>
+                    <span class="tag cert">CESP</span>
+                    <span class="tag cert">CEH</span>
+                </div>
+
+                <h3 style="font-size:14px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.15em;margin:32px 0 8px;">// education</h3>
+                <div style="font-size:13px;color:var(--text-dim);line-height:1.8;">
+                    <div><span style="color:var(--text);">M.S. Cybersecurity</span> - University of North Carolina, Charlotte <span style="color:var(--text-faint);">// 2022</span></div>
+                    <div><span style="color:var(--text);">B.E. Computer Science</span> - Easwari Engineering College <span style="color:var(--text-faint);">// 2019</span></div>
+                </div>
+
+                <h3 style="font-size:14px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.15em;margin:32px 0 8px;">// recognition</h3>
+                <div style="font-size:13px;color:var(--text-dim);line-height:1.8;">
+                    <div>Winner - National Level Cybersecurity Hackathon <span style="color:var(--text-faint);">// VIT × Wity, 2018</span></div>
+                </div>
+            </div>
+
+            <div>
+                <h3 style="font-size:14px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:8px;">// offensive stack</h3>
+                <div class="tag-cloud">
+                    <span class="tag">Cobalt Strike</span>
+                    <span class="tag">Brute Ratel C2</span>
+                    <span class="tag">Burp Suite</span>
+                    <span class="tag">Metasploit</span>
+                    <span class="tag">BloodHound</span>
+                    <span class="tag">Nmap</span>
+                    <span class="tag">Nessus</span>
+                    <span class="tag">SQLMap</span>
+                    <span class="tag">Nikto</span>
+                    <span class="tag">Dirbuster</span>
+                    <span class="tag">SET</span>
+                    <span class="tag">Immunity Debugger</span>
+                    <span class="tag">Wireshark</span>
+                    <span class="tag">Echo Mirage</span>
+                    <span class="tag">Postman</span>
+                    <span class="tag">MobSF</span>
+                    <span class="tag">Corellium</span>
+                    <span class="tag">Kube-Hunter</span>
+                    <span class="tag">Kube-Bench</span>
+                    <span class="tag">VECTR</span>
+                    <span class="tag">Attack Forge</span>
+                    <span class="tag">Exif Tool</span>
+                    <span class="tag">Process Hacker</span>
+                </div>
+
+                <h3 style="font-size:14px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.15em;margin:32px 0 8px;">// dev &amp; ops</h3>
+                <div class="tag-cloud">
+                    <span class="tag">Python</span>
+                    <span class="tag">PowerShell</span>
+                    <span class="tag">Bash</span>
+                    <span class="tag">C / C++</span>
+                    <span class="tag">AWS</span>
+                    <span class="tag">Kubernetes</span>
+                    <span class="tag">Docker</span>
+                    <span class="tag">Grafana</span>
+                    <span class="tag">Amazon Bedrock</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="contact-section" style="border-bottom:none;">
+    <div class="container">
+        <div class="section-header">
+            <span class="section-marker">[0x05]</span>
+            <h2 class="section-title">$ ./contact</h2>
+            <span class="section-subtitle">// direct channels</span>
+        </div>
+
+        <div class="contact-grid">
+            <div class="terminal-card">
+                <div class="terminal-header">
+                    <span class="terminal-dot red"></span>
+                    <span class="terminal-dot yellow"></span>
+                    <span class="terminal-dot green"></span>
+                    <span class="terminal-title">redroot97@kali:~/contact</span>
+                </div>
+                <div class="terminal-body">
+                    <div class="terminal-line"><span class="prompt">$</span> <span class="cmd">cat contact.txt</span></div>
+                    <div class="terminal-line">&nbsp;</div>
+                    <div class="terminal-line"><span class="key">github</span>....: <a href="https://github.com/redroot97" target="_blank">github.com/redroot97</a></div>
+                    <div class="terminal-line"><span class="key">linkedin</span>..: <a href="https://www.linkedin.com/in/redroot97" target="_blank">linkedin.com/in/redroot97</a></div>
+                    <div class="terminal-line"><span class="key">email</span>.....: <a href="mailto:atredroot97@gmail.com">atredroot97@gmail.com</a></div>
+                    <div class="terminal-line">&nbsp;</div>
+                    <div class="terminal-line"><span class="output">// avg. response time: &lt;24h</span></div>
+                </div>
+            </div>
+
+            <div class="research-art" aria-hidden="true">
+                <svg class="research-art-svg" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+                    <g stroke="#383838" stroke-width="0.6" opacity="0.45">
+                        <path d="M0 50 H500 M0 100 H500 M0 150 H500 M0 200 H500 M0 250 H500 M0 300 H500 M0 350 H500 M0 400 H500 M0 450 H500"/>
+                        <path d="M50 0 V500 M100 0 V500 M150 0 V500 M200 0 V500 M250 0 V500 M300 0 V500 M350 0 V500 M400 0 V500 M450 0 V500"/>
+                    </g>
+
+                    <g transform="translate(250 240)">
+                        <circle r="200" fill="none" stroke="#ff3344" stroke-opacity="0.14" stroke-width="0.9" stroke-dasharray="3 6"/>
+                        <circle r="155" fill="none" stroke="#ff3344" stroke-opacity="0.22" stroke-width="0.9" stroke-dasharray="2 5"/>
+                        <circle r="110" fill="none" stroke="#ff3344" stroke-opacity="0.36" stroke-width="0.9"/>
+                        <circle r="70"  fill="none" stroke="#ff3344" stroke-opacity="0.5"  stroke-width="0.9" stroke-dasharray="3 4"/>
+                        <line x1="-230" y1="0" x2="230" y2="0" stroke="#ff3344" stroke-opacity="0.55" stroke-width="1"/>
+                        <line x1="0" y1="-220" x2="0" y2="220" stroke="#ff3344" stroke-opacity="0.55" stroke-width="1"/>
+                    </g>
+
+                    <g transform="translate(160 170)" fill="#161616" stroke="#ececec" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="0" y="0" width="180" height="120" rx="4"/>
+                        <path d="M0 6 L90 74 L180 6" fill="none"/>
+                        <path d="M0 120 L70 64" fill="none" stroke-opacity="0.45"/>
+                        <path d="M180 120 L110 64" fill="none" stroke-opacity="0.45"/>
+                    </g>
+
+                    <g transform="translate(298 290) rotate(-18)" fill="none" stroke="#ececec" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 18
+                                 c0 -12 10 -22 22 -22
+                                 l20 0
+                                 c10 0 18 8 18 18
+                                 l0 16
+                                 c0 8 -6 14 -14 14
+                                 l-6 0
+                                 l-8 14
+                                 c-5 8 -16 12 -24 6
+                                 l-16 -8
+                                 c-9 -5 -12 -16 -6 -25
+                                 z" fill="#161616"/>
+                        <circle cx="36" cy="22" r="3" fill="#ff3344" stroke="none"/>
+                    </g>
+                </svg>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <h3><span class="at">@</span>redroot97</h3>
+            <p>Offensive security research, CVE advisories, and tooling notes by an offensive security engineer.</p>
+        </div>
+        <div class="footer-col">
+            <h4>// pages</h4>
+            <ul>
+                <li><a href="index.html">research log</a></li>
+                <li><a href="cves.html">cve advisories</a></li>
+                <li><a href="whoami.html">whoami</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>// elsewhere</h4>
+            <ul>
+                <li><a href="https://github.com/redroot97" target="_blank">github ↗</a></li>
+                <li><a href="https://www.linkedin.com/in/redroot97" target="_blank">linkedin ↗</a></li>
+                <li><a href="mailto:atredroot97@gmail.com">email ↗</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div>© <span id="year"></span> @redroot97</div>
+    </div>
+</footer>
+
+<script src="js/main.js"></script>
+</body>
+</html>

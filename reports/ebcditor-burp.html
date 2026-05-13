@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EBCDitor - a Burp Suite extension for decoding, editing, and re-encoding EBCDIC traffic during IBM mainframe penetration testing.">
+    <title>EBCDitor // @redroot97</title>
+    <link rel="stylesheet" href="../css/style.css?v=20260514">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230a0a0a'/><text y='75' font-family='monospace' font-size='80' font-weight='800' fill='%23ff3344'>@</text></svg>">
+</head>
+<body>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="../index.html" class="nav-logo">
+            <span class="prompt">~/</span>redroot97<span class="cursor"></span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="../index.html" class="active">research</a></li>
+            <li><a href="../cves.html">cve</a></li>
+            <li><a href="../whoami.html">whoami</a></li>
+            <li><a href="../whoami.html#contact">contact</a></li>
+        </ul>
+        <a href="https://github.com/redroot97" target="_blank" rel="noopener" class="nav-github">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+            <span>github</span>
+        </a>
+    </div>
+</nav>
+
+<div class="page-header">
+    <div class="page-header-grid-bg"></div>
+    <div class="page-header-inner">
+        <div class="page-breadcrumb">
+            <a href="../index.html">~/</a><span class="sep">/</span><a href="../index.html">research</a><span class="sep">/</span><span>ebcditor</span>
+        </div>
+        <h1 class="page-title"><span class="glitch accent" data-text="EBCDitor">EBCDitor</span></h1>
+        <p class="page-subtitle">Pentesting IBM mainframes through Burp Suite with real-time EBCDIC decoding.</p>
+    </div>
+</div>
+
+<div class="writeup-body">
+
+    <div class="writeup-meta">
+        <span class="meta-tag">burp suite</span>
+        <span class="meta-tag">mainframe</span>
+        <span class="meta-tag">tooling</span>
+        <span class="meta-sep"></span>
+        <span>2026.02</span>
+    </div>
+
+    <h2>// the mainframe problem</h2>
+
+    <p>
+        IBM mainframes still run the core infrastructure of most large banks, insurance companies, airlines, and government agencies. Despite their age, they process an enormous volume of critical transactions daily. And despite their importance, they are among the least-tested systems in any penetration testing engagement.
+    </p>
+
+    <p>
+        The reason is simple: mainframes don't speak the same language as modern tools. While the rest of the world uses ASCII (and UTF-8), IBM mainframes use <strong>EBCDIC</strong> - Extended Binary Coded Decimal Interchange Code. It's a completely different character encoding where the letter "A" is <code>0xC1</code> instead of <code>0x41</code>, a space is <code>0x40</code> instead of <code>0x20</code>, and nothing maps the way a pentester expects.
+    </p>
+
+    <p>
+        When you proxy mainframe traffic through Burp Suite, you see garbage. The request body is unreadable. The response is unreadable. You can't modify parameters, test for injection, or do anything useful because <strong>Burp doesn't understand EBCDIC</strong>.
+    </p>
+
+    <h2>// how mainframe access works</h2>
+
+    <p>
+        Enterprise users connect to mainframes through <strong>TN3270</strong> terminal emulators. TN3270 is a variant of Telnet specifically designed for IBM 3270-series terminals. Modern web gateways often wrap this in HTTP/HTTPS, creating a web-accessible frontend to the mainframe.
+    </p>
+
+    <div class="diagram"><span class="hl">[User's Browser]</span>
+      |
+      | HTTPS (normal web traffic)
+      v
+<span class="hl">[TN3270 Web Gateway]</span>
+      |
+      | translates HTTP <-> TN3270
+      | request bodies contain EBCDIC-encoded field data
+      v
+<span class="hl">[IBM Mainframe]</span>
+      |
+      | processes transaction in EBCDIC
+      | returns 3270 data stream
+      v
+<span class="hl">[TN3270 Web Gateway]</span>
+      |
+      | wraps response in HTTP
+      v
+<span class="hl">[User's Browser]</span>  <-- renders as a terminal screen</div>
+
+    <p>
+        The HTTP layer looks normal to Burp - valid headers, standard content types. But the request and response bodies contain EBCDIC-encoded data that represents mainframe screen fields, transaction codes, and user input. Without decoding this, a pentester is blind.
+    </p>
+
+    <h2>// what EBCDitor does</h2>
+
+    <p>
+        EBCDitor is a Burp Suite extension that sits in the proxy pipeline and provides real-time EBCDIC decoding, editing, and re-encoding. It adds a new tab to Burp's message editor that shows the EBCDIC content as readable ASCII, lets you modify it, and encodes it back to valid EBCDIC when you forward the request.
+    </p>
+
+    <h3>the workflow</h3>
+
+    <ol>
+        <li><strong>Intercept</strong> - Burp captures the HTTP request containing EBCDIC-encoded data in the body.</li>
+        <li><strong>Decode</strong> - the EBCDitor tab automatically detects and decodes EBCDIC fields to readable ASCII. You can now see transaction codes, user IDs, account numbers, and input fields.</li>
+        <li><strong>Edit</strong> - modify the decoded content directly in the editor tab. Test for SQL injection, transaction manipulation, access control bypass - the same attacks you'd run on any web application.</li>
+        <li><strong>Re-encode</strong> - when you forward the modified request, EBCDitor converts your ASCII edits back to valid EBCDIC before it hits the gateway.</li>
+        <li><strong>Inspect response</strong> - the response body is also decoded, so you can read the mainframe's output without switching to a hex editor.</li>
+    </ol>
+
+    <h2>// why this matters for pentesting</h2>
+
+    <p>
+        Without a tool like this, mainframe pentesting through a web gateway is effectively manual hex editing. You'd need to:
+    </p>
+
+    <ul>
+        <li>Copy the request body to a hex editor</li>
+        <li>Manually look up each EBCDIC byte in a conversion table</li>
+        <li>Figure out which bytes correspond to which screen fields</li>
+        <li>Make your changes in hex</li>
+        <li>Convert back to EBCDIC manually</li>
+        <li>Paste it back into Burp and forward</li>
+    </ul>
+
+    <p>
+        That process takes minutes per request. With EBCDitor, it's the same click-edit-forward workflow you use for any web application test. This turns mainframe pentesting from a painful manual exercise into something that moves at the same speed as regular web app testing.
+    </p>
+
+    <h2>// what you can test</h2>
+
+    <p>
+        Once you can read and modify the traffic, standard web application attacks apply to the mainframe layer:
+    </p>
+
+    <ul>
+        <li><strong>Transaction ID manipulation</strong> - mainframe transactions are identified by short codes (like "CICS" transactions). Modify these to access unauthorized transactions.</li>
+        <li><strong>Field overflow</strong> - 3270 screen fields have fixed lengths. Sending data beyond the field boundary can cause unexpected behavior on the mainframe side.</li>
+        <li><strong>Access control testing</strong> - change user context fields, terminal IDs, or session tokens to test horizontal and vertical privilege escalation.</li>
+        <li><strong>Input validation</strong> - test for command injection in mainframe input fields. EBCDIC-encoded payloads that wouldn't be caught by ASCII-based WAF rules.</li>
+        <li><strong>Session handling</strong> - mainframe sessions work differently from web sessions. Test for session fixation, replay, and hijacking at the TN3270 layer.</li>
+    </ul>
+
+    <h2>// EBCDIC encoding reference</h2>
+
+    <p>
+        For context on what EBCDitor is translating, here are some common EBCDIC vs ASCII mappings:
+    </p>
+
+    <pre><code>Character  ASCII  EBCDIC
+---------  -----  ------
+Space      0x20   0x40
+A          0x41   0xC1
+Z          0x5A   0xE9
+0          0x30   0xF0
+9          0x39   0xF9
+@          0x40   0x7C
+#          0x23   0x7B
+$          0x24   0x5B</code></pre>
+
+    <p>
+        The mapping is non-linear and non-trivial - you can't just add an offset. EBCDIC groups letters into non-contiguous ranges (A-I, J-R, S-Z are in different blocks), which is why manual conversion is so painful and error-prone.
+    </p>
+
+    <h2>// installation</h2>
+
+    <pre><code># build the extension JAR (requires Java + Gradle)
+gradle build
+
+# in Burp Suite:
+# Extender -> Add -> select the built JAR
+# the EBCDitor tab appears in the message editor</code></pre>
+
+    <p>
+        No external dependencies. The extension registers as a message editor tab and an HTTP listener. It activates automatically when it detects EBCDIC-encoded content in proxied traffic.
+    </p>
+
+    <a class="writeup-repo-link" href="https://github.com/redroot97/Burp_Extentions" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.58.23 2.75.11 3.04.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.26 5.69.41.36.78 1.07.78 2.16 0 1.56-.01 2.81-.01 3.19 0 .31.21.68.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+        <span>view source on github</span>
+        <span class="arrow">-></span>
+    </a>
+
+</div>
+
+<footer>
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <h3><span class="at">@</span>redroot97</h3>
+            <p>Offensive security research, CVE advisories, and tooling notes by an offensive security engineer.</p>
+        </div>
+        <div class="footer-col">
+            <h4>// pages</h4>
+            <ul>
+                <li><a href="../index.html">research log</a></li>
+                <li><a href="../cves.html">cve advisories</a></li>
+                <li><a href="../whoami.html">whoami</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>// elsewhere</h4>
+            <ul>
+                <li><a href="https://github.com/redroot97" target="_blank">github ↗</a></li>
+                <li><a href="https://www.linkedin.com/in/redroot97" target="_blank">linkedin ↗</a></li>
+                <li><a href="mailto:atredroot97@gmail.com">email ↗</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div>© <span id="year"></span> @redroot97</div>
+    </div>
+</footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>
