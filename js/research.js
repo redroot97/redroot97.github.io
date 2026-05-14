@@ -4,7 +4,7 @@ const posts = [
         tag: 'macos // persistence',
         title: 'Chrome Native Messaging Host Shadow Attack',
         excerpt: 'Exploiting Chrome\'s manifest resolution order to shadow a system-level Native Messaging Host with a user-level copy, hijacking extension-to-native-app communication without elevated privileges.',
-        url: 'reports/chrome-nmh-shadow.html',
+        url: 'reports/chrome-nmh-shadow',
         repo: 'https://github.com/redroot97/macOS'
     },
     {
@@ -12,7 +12,7 @@ const posts = [
         tag: 'macos // mdm bypass',
         title: 'JAMF Binary Tampering - Hijacking macOS MDM Agents',
         excerpt: 'Replacing the JAMF agent binary with a wrapper script that intercepts all MDM operations while keeping the agent functional and undetected by the management server.',
-        url: 'reports/jamf-binary-tampering.html',
+        url: 'reports/jamf-binary-tampering',
         repo: 'https://github.com/redroot97/macOS'
     },
     {
@@ -20,7 +20,7 @@ const posts = [
         tag: 'c2 // red team',
         title: 'Ghost Span - Hiding C2 Traffic in OpenTelemetry',
         excerpt: 'A command-and-control framework that disguises implant communications as legitimate OpenTelemetry trace data over OTLP/gRPC, blending into enterprise observability pipelines.',
-        url: 'reports/ghost-span-c2.html',
+        url: 'reports/ghost-span-c2',
         repo: 'https://github.com/redroot97/Ghost_Span_C2'
     },
     {
@@ -28,7 +28,7 @@ const posts = [
         tag: 'cobalt strike // active directory',
         title: 'Cobalt Strike BOFs for AD Operations',
         excerpt: 'Custom Beacon Object Files for in-process execution during Active Directory engagements - enumeration, lateral movement, and OPSEC-aware tradecraft without fork-and-run.',
-        url: 'reports/cobalt-strike-bofs.html',
+        url: 'reports/cobalt-strike-bofs',
         repo: 'https://github.com/redroot97/Cobalt_Strike_BOFs'
     },
     {
@@ -36,10 +36,17 @@ const posts = [
         tag: 'burp suite // mainframe',
         title: 'EBCDitor - Pentesting IBM Mainframes Through Burp',
         excerpt: 'A Burp Suite extension that decodes, edits, and re-encodes EBCDIC traffic in real time, enabling web-style pentesting against IBM 3270 mainframe terminals over TN3270.',
-        url: 'reports/ebcditor-burp.html',
+        url: 'reports/ebcditor-burp',
         repo: 'https://github.com/redroot97/Burp_Extentions'
     }
 ];
+
+const PER_PAGE = 5;
+let currentPage = 0;
+
+function totalPages() {
+    return Math.max(1, Math.ceil(posts.length / PER_PAGE));
+}
 
 function renderResearch() {
     const list = document.getElementById('research-list');
@@ -56,7 +63,11 @@ function renderResearch() {
         return;
     }
 
-    list.innerHTML = posts.map(p => `
+    const start = currentPage * PER_PAGE;
+    const page = posts.slice(start, start + PER_PAGE);
+    const total = totalPages();
+
+    list.innerHTML = page.map(p => `
         <a class="research-item" href="${p.url}">
             <div class="research-date">${p.date}</div>
             <div class="research-content">
@@ -67,6 +78,25 @@ function renderResearch() {
             <div class="research-arrow">-></div>
         </a>
     `).join('');
+
+    if (total > 1) {
+        list.innerHTML += `
+            <div class="research-pagination">
+                <button class="page-btn" onclick="goPage(0)" ${currentPage === 0 ? 'disabled' : ''}>&lt;&lt;</button>
+                <button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 0 ? 'disabled' : ''}>&lt;</button>
+                <span class="page-info">${currentPage + 1} / ${total}</span>
+                <button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === total - 1 ? 'disabled' : ''}>&gt;</button>
+                <button class="page-btn" onclick="goPage(${total - 1})" ${currentPage === total - 1 ? 'disabled' : ''}>&gt;&gt;</button>
+            </div>
+        `;
+    }
+}
+
+function goPage(n) {
+    const total = totalPages();
+    currentPage = Math.max(0, Math.min(n, total - 1));
+    renderResearch();
+    document.getElementById('research-list').scrollIntoView({ behavior: 'smooth' });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

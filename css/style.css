@@ -1468,6 +1468,44 @@ footer {
     line-height: 1.7;
 }
 
+.research-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 28px 0 8px;
+    font-family: var(--mono);
+}
+
+.page-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+.page-btn:hover:not(:disabled) {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.page-btn:disabled {
+    opacity: 0.25;
+    cursor: default;
+}
+
+.page-info {
+    font-size: 13px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    min-width: 50px;
+    text-align: center;
+}
+
 /* =====================
    GITHUB REPO CARDS
    ===================== */
