@@ -5,7 +5,7 @@ const posts = [
         title: 'Chrome Native Messaging Host Shadow Attack',
         excerpt: 'Exploiting Chrome\'s manifest resolution order to shadow a system-level Native Messaging Host with a user-level copy, hijacking extension-to-native-app communication without elevated privileges.',
         url: 'reports/chrome-nmh-shadow',
-        repo: 'https://github.com/redroot97/macOS'
+        repo: 'https://github.com/redroot97/macOS/tree/main/Chrome_NHM_Attack'
     },
     {
         date: '2026.01',
@@ -13,7 +13,7 @@ const posts = [
         title: 'JAMF Binary Tampering - Hijacking macOS MDM Agents',
         excerpt: 'Replacing the JAMF agent binary with a wrapper script that intercepts all MDM operations while keeping the agent functional and undetected by the management server.',
         url: 'reports/jamf-binary-tampering',
-        repo: 'https://github.com/redroot97/macOS'
+        repo: 'https://github.com/redroot97/macOS/tree/main/JAMF'
     },
     {
         date: '2025.12',
@@ -29,7 +29,7 @@ const posts = [
         title: 'Sticky Grabber BOF - Credentials from Sticky Notes',
         excerpt: 'A Cobalt Strike BOF that extracts passwords, API keys, and secrets from Microsoft Sticky Notes by reading the SQLite WAL file entirely in-process, with zero child processes.',
         url: 'reports/cobalt-strike-bofs',
-        repo: 'https://github.com/redroot97/Cobalt_Strike_BOFs'
+        repo: 'https://github.com/redroot97/Cobalt_Strike_BOFs/tree/main/Sticky_Grabber'
     },
     {
         date: '2024.06',
@@ -37,7 +37,7 @@ const posts = [
         title: 'EBCDitor - Pentesting IBM Mainframes Through Burp',
         excerpt: 'A Burp Suite extension that decodes, edits, and re-encodes EBCDIC traffic in real time, enabling web-style pentesting against IBM 3270 mainframe terminals over TN3270.',
         url: 'reports/ebcditor-burp',
-        repo: 'https://github.com/redroot97/Burp_Extentions'
+        repo: 'https://github.com/redroot97/Burp_Extentions/tree/main/Mainframe_EBCDIC_Editor'
     }
 ];
 
