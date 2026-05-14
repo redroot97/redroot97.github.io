@@ -22,6 +22,8 @@ const cves = [
             { label: 'HT127110', url: 'https://support.apple.com/127110' }
         ],
         note: 'Fix addressed in beta releases. Not yet available in all public releases.',
+        report: '',
+        reportNote: 'detailed write-up dropping soon.',
         credit: '@redroot97',
         link: 'https://www.cve.org/CVERecord?id=CVE-2026-28987'
     },
@@ -47,6 +49,8 @@ const cves = [
             { label: 'HT126792', url: 'https://support.apple.com/126792' }
         ],
         note: '',
+        report: 'reports/cve-2026-28868',
+        reportNote: '',
         credit: '@redroot97',
         link: 'https://www.cve.org/CVERecord?id=CVE-2026-28868'
     }
@@ -110,6 +114,8 @@ function renderCveTable() {
                                 <div class="cve-detail-value">${c.advisories.map(a => `<a href="${a.url}" target="_blank" rel="noopener" class="cve-advisory-link">${a.label} ↗</a>`).join('')}</div>
                             </div>
                         </div>
+                        ${c.report ? `<a href="${c.report}" class="cve-report-link">→ read full write-up</a>` : ''}
+                        ${c.reportNote ? `<div class="cve-report-soon">// ${c.reportNote}</div>` : ''}
                         <div class="cve-detail-credit">credit: ${c.credit}</div>
                     </div>
                 </td>
