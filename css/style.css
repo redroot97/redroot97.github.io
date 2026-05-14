@@ -437,7 +437,7 @@ section {
 }
 
 .hero-profile-frame {
-    animation: profile-emerge 1.4s cubic-bezier(0.16, 1, 0.3, 1) both, img-glitch 2s infinite step-end;
+    animation: profile-emerge 1.4s cubic-bezier(0.16, 1, 0.3, 1) both, img-glitch 5s infinite step-end;
 }
 
 @keyframes img-glitch {
@@ -1430,7 +1430,7 @@ footer {
     height: auto;
     display: block;
     overflow: visible;
-    animation: profile-emerge 1.4s cubic-bezier(0.16, 1, 0.3, 1) both, img-glitch 2s infinite step-end;
+    animation: profile-emerge 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
     -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 35%, rgba(0,0,0,0.85) 55%, rgba(0,0,0,0.45) 75%, transparent 100%);
             mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 35%, rgba(0,0,0,0.85) 55%, rgba(0,0,0,0.45) 75%, transparent 100%);
 }
