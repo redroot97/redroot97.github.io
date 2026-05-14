@@ -41,7 +41,7 @@
             <div class="page-breadcrumb">
                 <a href="index.html">~/</a><span class="sep">/</span><span>research-log</span>
             </div>
-            <h1 class="page-title">research <span class="glitch accent" data-text="log">log</span></h1>
+            <h1 class="page-title glitch" data-text="research log">research <span class="accent">log</span></h1>
             <p class="page-subtitle">
                 Technical write-ups, attack-vector analysis, and tooling research from active offensive security engagements. Covers red team operations, vulnerability discovery, adversary simulation, and detection-engineering collaboration.
             </p>
@@ -94,7 +94,7 @@
 </div>
 
 <!-- REPORTS -->
-<section>
+<section style="border-bottom:none;">
     <div class="container">
         <div class="section-header">
             <span class="section-marker">[write-ups]</span>
@@ -102,26 +102,8 @@
             <span class="section-subtitle">// technical breakdowns</span>
         </div>
 
-        <div class="research-cards" id="research-list">
+        <div class="research-list" id="research-list">
             <!-- populated by js/research.js -->
-        </div>
-    </div>
-</section>
-
-<!-- OPEN SOURCE / REPOS -->
-<section id="repos" style="border-bottom:none;">
-    <div class="container">
-        <div class="section-header">
-            <span class="section-marker">[open-source]</span>
-            <h2 class="section-title">repositories</h2>
-            <span class="section-subtitle">// <a href="https://github.com/redroot97" target="_blank" rel="noopener" style="color:var(--accent);">github.com/redroot97</a></span>
-        </div>
-
-        <div class="grid grid-2" id="github-repos">
-            <div class="repo-skeleton"></div>
-            <div class="repo-skeleton"></div>
-            <div class="repo-skeleton"></div>
-            <div class="repo-skeleton"></div>
         </div>
     </div>
 </section>
@@ -157,6 +139,5 @@
 
 <script src="js/main.js"></script>
 <script src="js/research.js"></script>
-<script src="js/github.js"></script>
 </body>
 </html>

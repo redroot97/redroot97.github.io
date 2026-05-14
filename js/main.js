@@ -24,19 +24,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 })();
 
-// Random glitch trigger for hero and page titles
+// Frequent glitch trigger for all titles
 (function () {
-    const glitches = document.querySelectorAll('.hero-title .glitch, .page-title .glitch');
+    const glitches = document.querySelectorAll('.hero-title.glitch, .page-title.glitch');
     if (!glitches.length) return;
     setInterval(() => {
-        if (Math.random() < 0.3) {
+        if (Math.random() < 0.6) {
             glitches.forEach(el => {
                 el.style.animation = 'none';
                 void el.offsetWidth;
                 el.style.animation = '';
             });
         }
-    }, 6000);
+    }, 3000);
 })();
 
 // Konami easter egg (because of course)
