@@ -79,7 +79,7 @@ function renderResearch() {
         </a>
     `).join('');
 
-    if (total > 1) {
+    {
         list.innerHTML += `
             <div class="research-pagination">
                 <button class="page-btn" onclick="goPage(0)" ${currentPage === 0 ? 'disabled' : ''}>&lt;&lt;</button>
