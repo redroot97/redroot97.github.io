@@ -1,61 +1,63 @@
-// =========================================================
-// @redroot97 - CVE registry
-// To add a new CVE, just append to the cves array below.
-// The page automatically re-counts and re-renders.
-// =========================================================
-
 const cves = [
     {
         id: 'CVE-2026-28987',
         year: 2026,
-        product: 'Pending public disclosure',
-        vendor: 'Embargoed',
-        type: 'Pending',
-        severity: 'pending',        // critical | high | medium | low | pending
-        status: 'reserved',         // reserved | published | disclosed
-        summary: 'Reserved CVE - full advisory will be published here after vendor remediation and coordinated disclosure. CVSS, affected versions, and reproduction details to follow.',
+        product: 'iOS / iPadOS / macOS / tvOS / watchOS',
+        vendor: 'Apple',
+        type: 'Kernel Info Leak',
+        severity: 'medium',
+        status: 'disclosed',
+        impact: 'An app may be able to leak sensitive kernel state.',
+        description: 'A logging issue was addressed with improved data redaction.',
+        affected: [
+            'iOS 26.5 and iPadOS 26.5',
+            'macOS Tahoe 26.5',
+            'tvOS 26.5',
+            'watchOS 26.5'
+        ],
+        advisories: [
+            { label: 'HT127119', url: 'https://support.apple.com/127119' },
+            { label: 'HT127118', url: 'https://support.apple.com/127118' },
+            { label: 'HT127115', url: 'https://support.apple.com/127115' },
+            { label: 'HT127110', url: 'https://support.apple.com/127110' }
+        ],
+        note: 'Fix addressed in beta releases. Not yet available in all public releases.',
         credit: '@redroot97',
         link: 'https://www.cve.org/CVERecord?id=CVE-2026-28987'
     },
     {
         id: 'CVE-2026-28868',
         year: 2026,
-        product: 'Pending public disclosure',
-        vendor: 'Embargoed',
-        type: 'Pending',
-        severity: 'pending',
-        status: 'reserved',
-        summary: 'Reserved CVE - full advisory will be published here after vendor remediation and coordinated disclosure. CVSS, affected versions, and reproduction details to follow.',
+        product: 'iOS / iPadOS / macOS / watchOS',
+        vendor: 'Apple',
+        type: 'Kernel Memory Disclosure',
+        severity: 'medium',
+        status: 'published',
+        impact: 'An app may be able to disclose kernel memory.',
+        description: 'A logging issue was addressed with improved data redaction.',
+        affected: [
+            'iOS 26.4 and iPadOS 26.4',
+            'macOS Tahoe 26.4',
+            'watchOS 26.4'
+        ],
+        advisories: [
+            { label: 'HT126799', url: 'https://support.apple.com/126799' },
+            { label: 'HT126798', url: 'https://support.apple.com/126798' },
+            { label: 'HT126794', url: 'https://support.apple.com/126794' },
+            { label: 'HT126792', url: 'https://support.apple.com/126792' }
+        ],
+        note: '',
         credit: '@redroot97',
         link: 'https://www.cve.org/CVERecord?id=CVE-2026-28868'
     }
-    // ---------------------------------------------------------
-    // To add another CVE later, copy this template:
-    //
-    // {
-    //     id: 'CVE-2026-XXXXX',
-    //     year: 2026,
-    //     product: 'Product Name X.Y',
-    //     vendor: 'Vendor Name',
-    //     type: 'Authentication Bypass',     // or RCE, XSS, SSRF, IDOR, etc.
-    //     severity: 'high',                   // critical | high | medium | low
-    //     status: 'published',                // reserved | published | disclosed
-    //     summary: 'One-paragraph description...',
-    //     credit: '@redroot97',
-    //     link: 'https://nvd.nist.gov/vuln/detail/CVE-2026-XXXXX'
-    // }
-    // ---------------------------------------------------------
 ];
-
-// -------- rendering --------
 
 const sevRank = { critical: 4, high: 3, medium: 2, low: 1, pending: 0 };
 
-// Hardcoded portfolio totals - update these as new advisories land.
 const CVE_SUMMARY = {
     total: 9,
-    published: 2,      // fixed - published
-    inProgress: 7      // fix in progress
+    published: 2,
+    inProgress: 7
 };
 
 function renderCveSummary() {
@@ -66,7 +68,7 @@ function renderCveSummary() {
 }
 
 function severityCell(sev) {
-    if (sev === 'pending') return `<span class="severity" style="color:var(--text-faint);border-color:var(--border-bright);">PENDING</span>`;
+    if (sev === 'pending') return '<span class="severity" style="color:var(--text-faint);border-color:var(--border-bright);">PENDING</span>';
     return `<span class="severity ${sev}">${sev}</span>`;
 }
 
@@ -78,64 +80,73 @@ function renderCveTable() {
     const tbody = document.getElementById('cve-table-body');
     if (!tbody) return;
 
-    // sort: newest year first, then by severity
     const sorted = [...cves].sort((a, b) => {
         if (b.year !== a.year) return b.year - a.year;
         return sevRank[b.severity] - sevRank[a.severity];
     });
 
-    tbody.innerHTML = sorted.map(c => `
-        <tr>
-            <td><span class="cve-id"><a href="${c.link}" target="_blank" rel="noopener">${c.id}</a></span></td>
-            <td>
-                <div class="cve-product">${c.product}</div>
-                <div class="cve-vendor">${c.vendor}</div>
-            </td>
-            <td><span class="cve-type">${c.type}</span></td>
-            <td>${severityCell(c.severity)}</td>
-            <td>${statusCell(c.status)}</td>
-            <td style="color:var(--text-faint);font-size:12px;">${c.year}</td>
-        </tr>
-    `).join('');
+    tbody.innerHTML = sorted.map((c, i) => {
+        const hasDetail = c.impact || c.affected;
+        const rowClass = hasDetail ? 'cve-row-expandable' : '';
+        const arrow = hasDetail ? '<span class="cve-expand-arrow">▸</span>' : '';
+
+        let detailHtml = '';
+        if (hasDetail) {
+            detailHtml = `<tr class="cve-detail-row" id="cve-detail-${i}" style="display:none;">
+                <td colspan="6">
+                    <div class="cve-detail-panel">
+                        <div class="cve-detail-grid">
+                            <div class="cve-detail-col">
+                                <div class="cve-detail-label">// impact</div>
+                                <div class="cve-detail-value">${c.impact}</div>
+                                <div class="cve-detail-label" style="margin-top:16px;">// description</div>
+                                <div class="cve-detail-value">${c.description}</div>
+                                ${c.note ? `<div class="cve-detail-note">${c.note}</div>` : ''}
+                            </div>
+                            <div class="cve-detail-col">
+                                <div class="cve-detail-label">// affected versions</div>
+                                <div class="cve-detail-value">${c.affected.map(v => `<div>${v}</div>`).join('')}</div>
+                                <div class="cve-detail-label" style="margin-top:16px;">// vendor advisories</div>
+                                <div class="cve-detail-value">${c.advisories.map(a => `<a href="${a.url}" target="_blank" rel="noopener" class="cve-advisory-link">${a.label} ↗</a>`).join('')}</div>
+                            </div>
+                        </div>
+                        <div class="cve-detail-credit">credit: ${c.credit}</div>
+                    </div>
+                </td>
+            </tr>`;
+        }
+
+        return `
+            <tr class="${rowClass}" ${hasDetail ? `onclick="toggleDetail(${i})"` : ''}>
+                <td><span class="cve-id"><a href="${c.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${c.id}</a></span>${arrow}</td>
+                <td>
+                    <div class="cve-product">${c.product}</div>
+                    <div class="cve-vendor">${c.vendor}</div>
+                </td>
+                <td><span class="cve-type">${c.type}</span></td>
+                <td>${severityCell(c.severity)}</td>
+                <td>${statusCell(c.status)}</td>
+                <td style="color:var(--text-faint);font-size:12px;">${c.year}</td>
+            </tr>
+            ${detailHtml}`;
+    }).join('');
+}
+
+function toggleDetail(i) {
+    const row = document.getElementById('cve-detail-' + i);
+    if (!row) return;
+    const isOpen = row.style.display !== 'none';
+    row.style.display = isOpen ? 'none' : 'table-row';
+    const arrow = row.previousElementSibling.querySelector('.cve-expand-arrow');
+    if (arrow) arrow.textContent = isOpen ? '▸' : '▾';
+    if (!isOpen) row.previousElementSibling.classList.add('cve-row-open');
+    else row.previousElementSibling.classList.remove('cve-row-open');
 }
 
 function renderCveDetails() {
     const container = document.getElementById('cve-detail-list');
     if (!container) return;
-
-    const published = cves.filter(c => c.status === 'published' || c.status === 'disclosed');
-
-    if (published.length === 0) {
-        container.innerHTML = `
-            <div style="padding:48px;border:1px dashed var(--border-bright);background:var(--bg-elevated);text-align:center;">
-                <div style="font-size:14px;color:var(--text-dim);margin-bottom:8px;">// no public write-ups yet</div>
-                <div style="font-size:12px;color:var(--text-faint);">Detailed advisories appear here after coordinated disclosure completes and vendor patches ship.</div>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = published.map(c => `
-        <article style="margin-bottom:32px;padding:28px;border:1px solid var(--border-bright);background:var(--bg-elevated);">
-            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:16px;">
-                <div>
-                    <div class="cve-id" style="font-size:18px;margin-bottom:4px;">
-                        <a href="${c.link}" target="_blank" rel="noopener">${c.id}</a>
-                    </div>
-                    <div style="color:var(--text);font-weight:500;">${c.product}</div>
-                    <div style="color:var(--text-dim);font-size:12px;">${c.vendor} // ${c.type}</div>
-                </div>
-                <div style="display:flex;gap:10px;align-items:flex-start;">
-                    ${severityCell(c.severity)}
-                    ${statusCell(c.status)}
-                </div>
-            </div>
-            <p style="font-size:14px;color:var(--text-dim);line-height:1.7;">${c.summary}</p>
-            <div style="margin-top:16px;font-size:11px;color:var(--text-faint);">
-                CREDIT: ${c.credit}
-            </div>
-        </article>
-    `).join('');
+    container.style.display = 'none';
 }
 
 document.addEventListener('DOMContentLoaded', () => {
