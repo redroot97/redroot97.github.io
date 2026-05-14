@@ -25,9 +25,9 @@ const posts = [
     },
     {
         date: '2024.09',
-        tag: 'cobalt strike // active directory',
-        title: 'Cobalt Strike BOFs for AD Operations',
-        excerpt: 'Custom Beacon Object Files for in-process execution during Active Directory engagements - enumeration, lateral movement, and OPSEC-aware tradecraft without fork-and-run.',
+        tag: 'cobalt strike // credential access',
+        title: 'Sticky Grabber BOF - Credentials from Sticky Notes',
+        excerpt: 'A Cobalt Strike BOF that extracts passwords, API keys, and secrets from Microsoft Sticky Notes by reading the SQLite WAL file entirely in-process, with zero child processes.',
         url: 'reports/cobalt-strike-bofs',
         repo: 'https://github.com/redroot97/Cobalt_Strike_BOFs'
     },
