@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff5566"/>
+      <stop offset="100%" stop-color="#cc1122"/>
+    </linearGradient>
+  </defs>
+  <text x="32" y="46" font-family="JetBrains Mono, Menlo, monospace" font-size="56" font-weight="900" fill="url(#grad)" text-anchor="middle" letter-spacing="-2">R</text>
+  <circle cx="50" cy="14" r="5" fill="#ececec"/>
+</svg>
