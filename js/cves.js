@@ -49,7 +49,7 @@ const cves = [
             { label: 'HT126792', url: 'https://support.apple.com/126792' }
         ],
         note: '',
-        report: 'reports/cve-2026-28868',
+        report: '',
         reportNote: '',
         credit: '@redroot97',
         link: 'https://www.cve.org/CVERecord?id=CVE-2026-28868'
