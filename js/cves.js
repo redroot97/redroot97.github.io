@@ -6,7 +6,7 @@ const cves = [
         vendor: 'Apple',
         type: 'Kernel Info Leak',
         severity: 'medium',
-        status: 'disclosed',
+        status: 'published',
         impact: 'An app may be able to leak sensitive kernel state.',
         description: 'A logging issue was addressed with improved data redaction.',
         affected: [
@@ -21,7 +21,7 @@ const cves = [
             { label: 'HT127115', url: 'https://support.apple.com/127115' },
             { label: 'HT127110', url: 'https://support.apple.com/127110' }
         ],
-        note: 'Fix addressed in beta releases. Not yet available in all public releases.',
+        note: '',
         report: '',
         reportNote: '',
         credit: '@redroot97',
