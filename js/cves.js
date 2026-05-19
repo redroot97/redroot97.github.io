@@ -23,7 +23,7 @@ const cves = [
         ],
         note: 'Fix addressed in beta releases. Not yet available in all public releases.',
         report: '',
-        reportNote: 'detailed write-up dropping soon.',
+        reportNote: '',
         credit: '@redroot97',
         link: 'https://www.cve.org/CVERecord?id=CVE-2026-28987'
     },
