@@ -17,7 +17,7 @@ const cves = [
             'visionOS < 26.6'
         ],
         advisories: [],
-        note: 'App Sandbox Escape → Kernel register control via AppleJPEGDriver::startDecoderExt (selector 5). OOB-write-by-1 in kalloc.6144 zone, demonstrated with Commpage Target Flag register control on macOS and kernel panic from sandboxed iOS app.',
+        note: '',
         report: '',
         reportNote: 'write-up coming soon',
         credit: '@redroot97',
@@ -41,7 +41,7 @@ const cves = [
             'visionOS < 26.6'
         ],
         advisories: [],
-        note: 'Sibling of CVE-2026-43739. App Sandbox Escape → Kernel register control via AppleJPEGDriver selector 7 (startDecoder2024). Distinct selector, distinct IOStruct shape (3488 bytes), distinct trigger byte set. Demonstrated with Commpage Target Flag in 7 GP registers from sandboxed iOS app.',
+        note: '',
         report: '',
         reportNote: 'write-up coming soon',
         credit: '@redroot97',
@@ -64,7 +64,7 @@ const cves = [
             'macOS Tahoe < 26.6'
         ],
         advisories: [],
-        note: 'NXMIB_LLINK_LIST handler in nexus_mib_get_sysctl() lacked kauth_cred_issuser() privilege check. Drivers store kernel heap pointers in nll_link_id, leaked to unprivileged users via sysctl. Stable, reliable addresses defeat KASLR.',
+        note: '',
         report: '',
         reportNote: 'write-up coming soon',
         credit: '@redroot97',
