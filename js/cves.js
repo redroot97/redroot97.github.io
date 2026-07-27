@@ -1,7 +1,79 @@
 const cves = [
     {
+        id: 'CVE-2026-43739',
+        year: 2026,
+        date: '2026-07-21',
+        product: 'iOS / iPadOS / macOS / visionOS',
+        vendor: 'Apple',
+        type: 'Kernel OOB Write',
+        severity: 'high',
+        status: 'published',
+        impact: 'A malicious application may be able to execute arbitrary code with kernel privileges. The AppleJPEGDriver IOKit user client is reachable from the iOS App Sandbox without entitlements.',
+        description: 'An out-of-bounds write was addressed with improved bounds checking in AppleJPEGDriver.',
+        affected: [
+            'iOS < 26.6',
+            'iPadOS < 26.6',
+            'macOS Tahoe < 26.6',
+            'visionOS < 26.6'
+        ],
+        advisories: [],
+        note: 'App Sandbox Escape → Kernel register control via AppleJPEGDriver::startDecoderExt (selector 5). OOB-write-by-1 in kalloc.6144 zone, demonstrated with Commpage Target Flag register control on macOS and kernel panic from sandboxed iOS app.',
+        report: '',
+        reportNote: 'write-up coming soon',
+        credit: '@redroot97',
+        link: 'https://www.cve.org/CVERecord?id=CVE-2026-43739'
+    },
+    {
+        id: 'CVE-2026-43816',
+        year: 2026,
+        date: '2026-07-21',
+        product: 'iOS / iPadOS / macOS / visionOS',
+        vendor: 'Apple',
+        type: 'Kernel OOB Write',
+        severity: 'high',
+        status: 'published',
+        impact: 'A malicious application may be able to execute arbitrary code with kernel privileges. The AppleJPEGDriver IOKit user client is reachable from the iOS App Sandbox without entitlements.',
+        description: 'An out-of-bounds write was addressed with improved bounds checking in AppleJPEGDriver.',
+        affected: [
+            'iOS < 26.6',
+            'iPadOS < 26.6',
+            'macOS Tahoe < 26.6',
+            'visionOS < 26.6'
+        ],
+        advisories: [],
+        note: 'Sibling of CVE-2026-43739. App Sandbox Escape → Kernel register control via AppleJPEGDriver selector 7 (startDecoder2024). Distinct selector, distinct IOStruct shape (3488 bytes), distinct trigger byte set. Demonstrated with Commpage Target Flag in 7 GP registers from sandboxed iOS app.',
+        report: '',
+        reportNote: 'write-up coming soon',
+        credit: '@redroot97',
+        link: 'https://www.cve.org/CVERecord?id=CVE-2026-43816'
+    },
+    {
+        id: 'CVE-2026-39877',
+        year: 2026,
+        date: '2026-07-21',
+        product: 'iOS / iPadOS / macOS',
+        vendor: 'Apple',
+        type: 'Kernel Info Leak',
+        severity: 'medium',
+        status: 'published',
+        impact: 'An app may be able to leak sensitive kernel state. The kern.skywalk.llink_list sysctl exposes kernel heap addresses to any unprivileged user, defeating KASLR heap randomization.',
+        description: 'The issue was addressed with improved access checks in the IOSkywalkFamily nexus MIB handler.',
+        affected: [
+            'iOS < 26.6',
+            'iPadOS < 26.6',
+            'macOS Tahoe < 26.6'
+        ],
+        advisories: [],
+        note: 'NXMIB_LLINK_LIST handler in nexus_mib_get_sysctl() lacked kauth_cred_issuser() privilege check. Drivers store kernel heap pointers in nll_link_id, leaked to unprivileged users via sysctl. Stable, reliable addresses defeat KASLR.',
+        report: '',
+        reportNote: 'write-up coming soon',
+        credit: '@redroot97',
+        link: 'https://www.cve.org/CVERecord?id=CVE-2026-39877'
+    },
+    {
         id: 'CVE-2026-28987',
         year: 2026,
+        date: '2026-05-11',
         product: 'iOS / iPadOS / macOS / tvOS / watchOS',
         vendor: 'Apple',
         type: 'Kernel Info Leak',
@@ -30,6 +102,7 @@ const cves = [
     {
         id: 'CVE-2026-28868',
         year: 2026,
+        date: '2026-03-24',
         product: 'iOS / iPadOS / macOS / watchOS',
         vendor: 'Apple',
         type: 'Kernel Memory Disclosure',
@@ -59,9 +132,9 @@ const cves = [
 const sevRank = { critical: 4, high: 3, medium: 2, low: 1, pending: 0 };
 
 const CVE_SUMMARY = {
-    total: 9,
-    published: 2,
-    inProgress: 7
+    total: 10,
+    published: 5,
+    inProgress: 5
 };
 
 function renderCveSummary() {
@@ -85,7 +158,8 @@ function renderCveTable() {
     if (!tbody) return;
 
     const sorted = [...cves].sort((a, b) => {
-        if (b.year !== a.year) return b.year - a.year;
+        const da = a.date || `${a.year}-01-01`, db = b.date || `${b.year}-01-01`;
+        if (da !== db) return db.localeCompare(da);
         return sevRank[b.severity] - sevRank[a.severity];
     });
 
@@ -132,7 +206,7 @@ function renderCveTable() {
                 <td><span class="cve-type">${c.type}</span></td>
                 <td>${severityCell(c.severity)}</td>
                 <td>${statusCell(c.status)}</td>
-                <td style="color:var(--text-faint);font-size:12px;">${c.year}</td>
+                <td style="color:var(--text-faint);font-size:12px;">${c.date || c.year}</td>
             </tr>
             ${detailHtml}`;
     }).join('');
