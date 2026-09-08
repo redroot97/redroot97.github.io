@@ -51,16 +51,21 @@
     </div>
 
     <div class="callout">
-        <strong>CVE-2026-69267</strong> &nbsp;·&nbsp; CVSS 3.1 <strong>7.8</strong> (Local) &nbsp;·&nbsp;
+        <strong>CVE-2026-69267</strong> &nbsp;·&nbsp; Microsoft: <strong>Information Disclosure</strong>, Max Severity <strong>Important</strong> &nbsp;·&nbsp;
+        CWE-1220 &nbsp;·&nbsp; CVSS 3.1 <strong>6.5</strong> (<code>AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N</code>) &nbsp;·&nbsp;
         Windows 10 (all supported) &amp; Windows 11 through Build 26200 (25H2), x64 + ARM64 &nbsp;·&nbsp;
-        reported to MSRC, CVE assigned. Discovered during an authorized red team engagement.
+        released Sep 8, 2026. Discovered during an authorized red team engagement.
         <a href="https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-69267" target="_blank" rel="noopener">MSRC advisory ↗</a>
+    </div>
+
+    <div class="callout">
+        <strong>How to read this.</strong> Microsoft scored CVE-2026-69267 for its root cause: an unauthorized local caller reaching SYSTEM-context file-system access through the DiagTrack RPC method (information disclosure, CWE-1220). Everything below the coercion is what that primitive <em>enables</em> in a default Active Directory environment - the NTLM relay to <code>NT AUTHORITY\SYSTEM</code> - and it additionally depends on LDAP signing and channel binding not being enforced. That escalation chain is why the base score reflects disclosure rather than full EoP, and why any one of the LDAP-hardening controls below breaks it.
     </div>
 
     <h2>// the one-line version</h2>
 
     <p>
-        The Windows <strong>Connected User Experiences and Telemetry</strong> service - <code>DiagTrack</code>, running as <code>NT AUTHORITY\SYSTEM</code> inside <code>svchost.exe -k utcsvc</code> - exposes an RPC method that takes a file path and accesses it <em>as SYSTEM with no check on the caller</em>. Point that path at a WebDAV UNC and the SYSTEM context authenticates outbound with the machine account. Relay that authentication to the domain controller, configure delegation against the machine's own AD object, and Kerberos hands you back an administrator. From a <strong>standard domain user with no admin rights</strong>, on localhost, in under 30 seconds.
+        The Windows <strong>Connected User Experiences and Telemetry</strong> service - <code>DiagTrack</code>, running as <code>NT AUTHORITY\SYSTEM</code> inside <code>svchost.exe -k utcsvc</code> - exposes an RPC method that takes a file path and accesses it <em>as SYSTEM with no check on the caller</em>. That unchecked SYSTEM-context access is the vulnerability Microsoft assigned the CVE to. Point the path at a WebDAV UNC and the SYSTEM context authenticates outbound with the machine account; relay that authentication to the domain controller, configure delegation against the machine's own AD object, and Kerberos hands you back an administrator. From a <strong>standard domain user with no admin rights</strong>, on localhost, in under 30 seconds.
     </p>
 
     <h2>// the vulnerable method</h2>

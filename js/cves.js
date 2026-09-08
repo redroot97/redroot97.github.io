@@ -2,23 +2,24 @@ const cves = [
     {
         id: 'CVE-2026-69267',
         year: 2026,
-        date: '2026-08-11',
+        date: '2026-09-08',
         product: 'Windows 10 / Windows 11',
         vendor: 'Microsoft',
-        type: 'Elevation of Privilege / NTLM Coercion',
-        severity: 'high',
+        type: 'Information Disclosure (CWE-1220)',
+        severity: 'medium',
         status: 'published',
-        impact: 'A standard domain user can escalate to NT AUTHORITY\\SYSTEM. The SYSTEM-level DiagTrack (Connected User Experiences and Telemetry) service exposes an RPC method that accesses a caller-supplied path with no access check, enabling NTLM coercion of the machine account. CVSS 3.1 7.8 (Local).',
-        description: 'The DiagTrack RPC interface (Opnum 19) accesses an attacker-supplied file path as SYSTEM without verifying the caller. Supplying a WebDAV UNC path coerces the machine account into NTLM authentication, which is relayed to the domain controller over LDAPS to configure Resource-Based Constrained Delegation and, via Kerberos S4U, obtain an administrator service ticket for SYSTEM code execution.',
+        impact: 'Insufficient granularity of access control in the Windows Connected User Experiences and Telemetry (DiagTrack) service lets an authorized local user disclose SYSTEM-context file-system information. Microsoft: Max Severity Important, CVSS 3.1 6.5 (AV:L/AC:L/PR:L/UI:N/S:C/C:H/I:N/A:N). In a default Active Directory environment the same primitive chains, via NTLM relay + RBCD + Kerberos S4U, to local privilege escalation to NT AUTHORITY\\SYSTEM.',
+        description: 'The DiagTrack RPC interface (Opnum 19) accesses a caller-supplied file path in the SYSTEM security context with no access check on the caller (CWE-1220). Supplying a WebDAV UNC path coerces the machine account into NTLM authentication; the PoC relays that to the domain controller over LDAPS, configures Resource-Based Constrained Delegation, and uses Kerberos S4U to obtain an administrator service ticket for SYSTEM code execution. The CVE is scored for the disclosure/access-control root cause; the escalation chain additionally requires LDAP signing and channel binding not to be enforced.',
         affected: [
             'Windows 10 (all supported versions)',
             'Windows 11 through Build 26200 (25H2)',
             'x64 and ARM64'
         ],
         advisories: [
-            { label: 'MSRC CVE-2026-69267', url: 'https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-69267' }
+            { label: 'MSRC CVE-2026-69267', url: 'https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-69267' },
+            { label: 'CVE.org record', url: 'https://www.cve.org/CVERecord?id=CVE-2026-69267' }
         ],
-        note: '',
+        note: 'Microsoft classification: Information Disclosure, Important. Demonstrated downstream impact: local privilege escalation to SYSTEM. Credit: Dhiyanesh Selvaraj (@redroot97, with CVS Health); Microsoft also acknowledges Lian Owen and renyidudumen.',
         report: 'reports/diagtrack-ntlm-coercion',
         reportNote: '',
         credit: '@redroot97',
