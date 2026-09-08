@@ -1,5 +1,30 @@
 const cves = [
     {
+        id: 'CVE-2026-69267',
+        year: 2026,
+        date: '2026-08-11',
+        product: 'Windows 10 / Windows 11',
+        vendor: 'Microsoft',
+        type: 'Elevation of Privilege / NTLM Coercion',
+        severity: 'high',
+        status: 'published',
+        impact: 'A standard domain user can escalate to NT AUTHORITY\\SYSTEM. The SYSTEM-level DiagTrack (Connected User Experiences and Telemetry) service exposes an RPC method that accesses a caller-supplied path with no access check, enabling NTLM coercion of the machine account. CVSS 3.1 7.8 (Local).',
+        description: 'The DiagTrack RPC interface (Opnum 19) accesses an attacker-supplied file path as SYSTEM without verifying the caller. Supplying a WebDAV UNC path coerces the machine account into NTLM authentication, which is relayed to the domain controller over LDAPS to configure Resource-Based Constrained Delegation and, via Kerberos S4U, obtain an administrator service ticket for SYSTEM code execution.',
+        affected: [
+            'Windows 10 (all supported versions)',
+            'Windows 11 through Build 26200 (25H2)',
+            'x64 and ARM64'
+        ],
+        advisories: [
+            { label: 'MSRC CVE-2026-69267', url: 'https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-69267' }
+        ],
+        note: '',
+        report: 'reports/diagtrack-ntlm-coercion',
+        reportNote: '',
+        credit: '@redroot97',
+        link: 'https://msrc.microsoft.com/update-guide/vulnerability/CVE-2026-69267'
+    },
+    {
         id: 'CVE-2026-43739',
         year: 2026,
         date: '2026-07-21',
@@ -132,8 +157,8 @@ const cves = [
 const sevRank = { critical: 4, high: 3, medium: 2, low: 1, pending: 0 };
 
 const CVE_SUMMARY = {
-    total: 10,
-    published: 5,
+    total: 11,
+    published: 6,
     inProgress: 5
 };
 

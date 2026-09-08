@@ -1,5 +1,13 @@
 const posts = [
     {
+        date: '2026.08',
+        tag: 'windows // privilege escalation',
+        title: 'DiagTrack RPC Coercion - Standard User to SYSTEM (CVE-2026-69267)',
+        excerpt: 'A standard domain user coerces the SYSTEM-level Windows DiagTrack service into NTLM authentication via an unchecked RPC method, relays it to the DC over LDAPS, and abuses RBCD + Kerberos S4U to escalate to NT AUTHORITY\\SYSTEM - localhost only, in under 30 seconds.',
+        url: 'reports/diagtrack-ntlm-coercion',
+        repo: 'https://github.com/redroot97/windows/tree/main/CVE-2026-69267-DiagTrack-NTLM-Coercion-LPE'
+    },
+    {
         date: '2026.01',
         tag: 'macos // persistence',
         title: 'Chrome Native Messaging Host Shadow Attack',
